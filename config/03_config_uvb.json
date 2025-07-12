@@ -1,0 +1,13 @@
+{
+	"file_name_predictor": "X"
+	,"file_name_target": "y"
+	,"pre_processing_data": true
+	,"classify": true
+	,"_list_classifier": ["DT"]
+	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
+	,"k_fold_split": 5
+	,"verbose": false
+	,"random_state": 42
+	,"test": true
+	,"debug": false
+}

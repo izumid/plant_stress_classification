@@ -1,0 +1,5 @@
+experiment;train_acc_ten_above;train_test_hundred;f1_hundred;valid_window;invalid_window;total
+1;0;9;10;0;10;10
+2;12;33;37;7;37;44
+3;11;30;33;1;33;34
+4;0;45;48;12;48;60
