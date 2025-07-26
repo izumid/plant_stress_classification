@@ -234,7 +234,7 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 	
 
 # MARK: MAIN
-def main():
+def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
 	path_unified_resized = os.path.join(path_root,"01_unified_resized")
@@ -247,8 +247,6 @@ def main():
 	y_column_name = "applied_stimulus"
 
 	pd.set_option('display.max_colwidth', None)
-
-	config = read_config(os.path.join(os.getcwd(),"04_config_ldv_svm"+".json"))
 	
 	list_window = new_window_size(total_sample_size=config["sample_size"])
 	list_window = list_window[1:]
@@ -267,7 +265,7 @@ def main():
 		df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_result.items()})
 		
 		# -- Unify --
-		# Unify each stimili into a single file
+		# Unify each stimuli into a single file
 		if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
 
 		for folder in os.listdir(path_parent_root):
@@ -351,15 +349,14 @@ def main():
 
 if __name__ == "__main__":
 	try: 
+		config = read_config(os.path.join(os.getcwd(),r"config/04_config_ldv.json"))
+		
 		if int(input("Type 1 to show windows list: ")):
-			config = read_config(os.path.join(os.getcwd(),"04_config_ldv"+".json"))
 			list_window = new_window_size(total_sample_size=config["sample_size"])
 			print(list_window)
 		
-		if int(input("Type 1 to start process: ")):
-			#main()
-			pass
-
+		if int(input("Type 1 to start process: ")): main(config=config)
+			
 	except Exception as e: 
 		print(f"An error occurred: {e}")
 
