@@ -1,0 +1,32 @@
+# Ignore folders and its contents
+/bin/
+/Include/
+/Lib/
+/Scripts/
+/share/
+/-v/
+/_check/
+/codes/
+z_img/
+/experiments_data/
+
+# Ignore subfolders, but not root files
+z_bat/*/
+
+
+# Keep just specific folder
+/experiments_data/
+!/experiments_data/05_analyses
+
+# Ignore files with extension
+*.cfg
+*.exe
+*.spec
+*.pyc
+
+# Ignore specific files
+analyses.py
+
+# Ignore .env files (but not .env.example)
+!.env.example
+.env

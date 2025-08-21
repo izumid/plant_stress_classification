@@ -1,0 +1,12 @@
+{
+	"sample_size": 5240000
+	,"list_window": [[26200,200], [13100,400], [6550,800], [3275,1600], [1310,4000], [200,26200], [400,13100], [800,6550], [1600,3275], [4000,1310]]
+	,"pre_processing_data": false
+	,"classify": true
+	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
+	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
+	,"k_fold_split": 0
+	,"verbose": false
+	,"random_state": 42
+	,"debug": false
+}

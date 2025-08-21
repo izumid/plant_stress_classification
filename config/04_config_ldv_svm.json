@@ -1,0 +1,10 @@
+{
+	"sample_size": 5240000
+	,"pre_processing_data": false
+	,"classify": true
+	,"list_classifier": ["SVM"]
+	,"k_fold_split": 5
+	,"verbose": false
+	,"random_state": 42
+	,"debug": false
+}
