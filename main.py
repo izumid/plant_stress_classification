@@ -129,9 +129,9 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,ra
 		df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_result.items()})
 		
 		try:
-			# -- Unify --
+			# -- Unify Data --
 			# Unify each stimili into a single file
-			#if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
+			if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
 
 			for folder in os.listdir(path_parent_root):
 				if "lectrodes" not in folder:
@@ -202,10 +202,15 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 	int_verbose = int(verbose)
 	scaler = MinMaxScaler()
 	if not os.path.exists(path_destination): os.makedirs(path_destination)
-	total_rounds = len(list_window)*k_fold_split*len(list_classifier)
+	
 	rounds = 0
 	header_txt = ["model","window","samples_summarized","accuracy_train","accuracy_test","presicion","recall","f1_score"]
-	skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
+	
+	if k_fold_split: 
+		skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
+		total_rounds = len(list_window)*k_fold_split*len(list_classifier)
+	else:  total_rounds = len(list_window)*len(list_classifier)
+
 	dict_column_type = {
 		"model": "str"
 		,"window": "int"
@@ -217,15 +222,17 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 		,"f1_score": "float"
 	}
 	
+	
 	for MxN in list_window:
 		folder_window = str(MxN[0])+'x'+str(MxN[1])
 		path_txt = os.path.join(path_destination,f"{filename}_skfold_{MxN[0]}x{MxN[1]}.txt")
 		if os.path.exists(path_txt): os.remove(path_txt)
-		with open(path_txt, mode="a") as file: file.write(";".join(map(str, header_txt)) + "\n")
+		#with open(path_txt, mode="a") as file: file.write(";".join(map(str, header_txt)) + "\n")
 		df_train = pd.read_feather(os.path.join(path_base,folder_window,"dataset.feather"))
 		X = df_train.iloc[:, :-1]
 		y = df_train.iloc[:, -1]
 		result = []
+
 
 		for model in list_classifier:
 			if not (model != "DT" and model != "XGB" and model != "RF"): 
@@ -234,6 +241,7 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 				max_depth = 3
 				if min_samples_leaf <= 1: min_samples_leaf = 2
 				if min_samples_split <= 1: min_samples_split = 2
+
 
 			match model:
 				case "DUM": classifier = DummyClassifier(random_state=random_state,strategy="stratified")
@@ -244,6 +252,7 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 				case "RF": classifier = RandomForestClassifier(random_state=random_state,verbose=int_verbose,criterion="gini",min_samples_split=min_samples_split,max_depth=max_depth,min_samples_leaf=min_samples_leaf,n_estimators=1000)
 				case "MLP": classifier = MLPClassifier(random_state=random_state,verbose=verbose,solver="adam",activation="logistic",max_iter=1000,hidden_layer_sizes=(1,2))
 				case "SVM": classifier = svm.SVC(random_state=random_state,verbose=verbose,probability=False,C=1.0, kernel='rbf',degree=3,gamma='scale',coef0=0.0,shrinking=True,tol=0.001,cache_size=200,class_weight=None,max_iter=-1,decision_function_shape='ovr', break_ties=False)
+			
 
 			if k_fold_split:
 				execution = 1
@@ -259,7 +268,7 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 					classifier.fit(X_train_scaled,y_train)
 					y_train_predicted = classifier.predict(X_train_scaled)
 					y_predicted = classifier.predict(X_test_scaled)
-					
+
 					data = []
 					data = [
 						model
@@ -276,7 +285,7 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 
 					rounds+=1
 					execution+=1
-			else:
+			else:				
 				execution = 1
 				X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,shuffle=True,random_state=random_state)
 			
@@ -325,12 +334,19 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 # MARK: Main
 def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
-	path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
+	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
+	path_root = os.path.join(os.getcwd(),r"data")
+	
 	path_unified_resized = os.path.join(path_root,"01_unified_resized")
 	path_class_split = os.path.join(path_root,"02_class_split")
-	path_base = os.path.join(path_root,"03_summarized_window")
-	path_split = os.path.join(path_root,"04_split")
-	path_result = os.path.join(path_root,"05_result",config["destination_folder_name"])
+	
+	summarize = config["summarize"]
+
+	if summarize: path_base = os.path.join(path_root,"03_summarized_window")
+	else: path_base = os.path.join(path_root,"04_window")
+
+	#path_split = os.path.join(path_root,"04_split")
+	path_result = os.path.join(path_root,r"05_experiment_result",config["destination_folder_name"])
 	debug = config["debug"]
 
 	x_column_name = "electro_value"
@@ -361,7 +377,8 @@ def main(config):
 		df_non_stimuled = pd.read_feather(os.path.join(path_class_split,"non_stimuled.feather"))
 		df_stimuled = pd.read_feather(os.path.join(path_class_split,"stimuled.feather"))
 
-		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=False,csv=False)
+		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=summarize,csv=False)
+		
 
 	if config["classify"]:
 
@@ -379,10 +396,10 @@ def main(config):
 			,random_state = config["random_state"]
 			,verbose = config["verbose"]
 			,k_fold_split = k_fold_split
-			,filename=str(Path(os.path.realpath(__file__)).stem)
+			#,filename=str(Path(os.path.realpath(__file__)).stem)
 		)
-		
-		result_feather_read(path_destination=path_result,filename=str(Path(os.path.realpath(__file__)).stem)+"_stratified_kfold")
+
+		#result_feather_read(path_destination=path_result,filename=str(Path(os.path.realpath(__file__)).stem)+"_stratified_kfold")
 
 
 def mult_text_to_csv(path_origin,path_destination,all_has_title,filename):
@@ -409,21 +426,23 @@ if __name__ == "__main__":
 	
 	try: 
 		config = read_config(os.path.join(os.getcwd(),"config/config.json"))
-		if int(input("Type 1 to show windows list: ")):
+		
+		# if int(input("Type 1 to show windows list: ")):
 
-			list_window = config["list_window"]
-			if len(list_window) < 0: 
-				sample_size = int(list_window[0][0] * list_window[0][1])
-				print(new_window_size(total_sample_size=config["sample_size"]))
-			else: print(list_window)
+		# 	list_window = config["list_window"]
+		# 	if len(list_window) < 0:
+		# 		sample_size = int(list_window[0][0] * list_window[0][1])
+		# 		print(new_window_size(total_sample_size=config["sample_size"]))
+		# 	else: print(list_window)
 				
-		if int(input("Type 1 to start process: ")): main(config)
+		# if int(input("Type 1 to start process: ")):
+		main(config)
 
-		if int(input("Unify separated txt base files: ")):
-			path_origin = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem,"05_result")
-			path_destination = os.path.join(Path(path_origin).parent, "06_result_unified")
-			if not os.path.exists(path_destination): os.makedirs(path_destination)
-			mult_text_to_csv(path_origin=path_origin, path_destination=path_destination, all_has_title=True,filename=Path(os.path.realpath(__file__)).stem+"_stratified_kfold")
+		# if int(input("Unify separated txt base files: ")):
+		# 	path_origin = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem,"05_result")
+		# 	path_destination = os.path.join(Path(path_origin).parent, "06_result_unified")
+		# 	if not os.path.exists(path_destination): os.makedirs(path_destination)
+		# 	mult_text_to_csv(path_origin=path_origin, path_destination=path_destination, all_has_title=True,filename=Path(os.path.realpath(__file__)).stem+"_stratified_kfold")
 
 	except Exception as e: 
 		print(f"An error occurred: {e}")
