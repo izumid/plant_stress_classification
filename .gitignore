@@ -26,6 +26,7 @@ z_bat/*/
 
 # Ignore specific files
 analyses.py
+log_file.txt
 
 # Ignore .env files (but not .env.example)
 !.env.example
