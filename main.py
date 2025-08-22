@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 import json
 
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold,train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score
 
@@ -103,39 +103,25 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		if csv: df.to_csv(os.path.join(path_aux,filename+".csv"),sep=';',quotechar='"',encoding="utf-8-sig")
 		else: df.to_feather(os.path.join(path_aux,filename+".feather"))
 
-
-# MARK: Split Traint Test
-def split_train_test(path_base,path_destination,filename="dataframe",csv=False):
+# MARK: Debug Code
+def debug_code(debug,message,var=None):
 	"""
-		Save different dataframe bases to training an test. By defaualt 80% training and 20% to tests.
-	"""
+	Description:
+		Print messages across the process to verify data behaviour.
 
-	for folder in os.listdir(path_base):
-		path_aux = os.path.join(path_base,folder)
+	Args:
+		message(str): text to identify the code process the message are about;
+		var(any): variable values to validade;
+		debug(bool): true print's the messages;
+	"""	
 
-		for file in os.listdir(path_aux):
-			if "feather" in Path(file).suffix:
-				df = pd.read_feather(os.path.join(path_aux,file))
-				df["applied_stimulus"] = df["applied_stimulus"].astype(np.int64)
-				sample_size_train = int((len(df)*0.8)/2)
-				sample_size_test = int((len(df)*0.2)/2)
-
-				df_train = pd.concat([df.query("applied_stimulus == 0").head(sample_size_train),df.query("applied_stimulus == 1").head(sample_size_train)])
-				df_test =  pd.concat([df.query("applied_stimulus == 0").tail(sample_size_test),df.query("applied_stimulus == 1").tail(sample_size_test)])
-
-				aux_path_destination = os.path.join(path_destination,folder)
-				if not os.path.exists(aux_path_destination): os.makedirs(aux_path_destination)
-
-				if csv: 
-					df_train.to_csv(os.path.join(aux_path_destination,f"{filename}_train.csv"),sep=';',quotechar='"',encoding="utf-8-sig")
-					df_test.to_csv(os.path.join(aux_path_destination,f"{filename}_test.csv"),sep=';',quotechar='"',encoding="utf-8-sig")
-				else: 
-					df_train.to_feather(os.path.join(aux_path_destination,f"{filename}_train.feather"))
-					df_test.to_feather(os.path.join(aux_path_destination,f"{filename}_test.feather"))
+	if debug: 
+		if var is None: print(f"{message};\r\n")
+		else: print(f"{message}: \r\n{var};\r\n")
 
 
 # MARK: Data Preprocessing
-def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,random_seed,sample_size,path_class_split):
+def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,random_state,sample_size,path_class_split):
 	
 		print("pre processing...")
 
@@ -153,7 +139,7 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,ra
 					np_array = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
 					np_array = np.concatenate(np_array)
 
-					rng = np.random.default_rng(random_seed)
+					rng = np.random.default_rng(random_state)
 					np_array[:] = rng.permutation(np_array)
 					np_array = np_array[:sample_size]
 					print(np_array.shape,folder)
@@ -201,11 +187,11 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,ra
 
 			# -- Seperate class to correct windowing --
 			#	1.Not Event
-			df_non_stimuled = df_non_stimuled.sample(frac=1, random_state=random_seed)
+			df_non_stimuled = df_non_stimuled.sample(frac=1, random_state=random_state)
 			df_non_stimuled.to_feather(os.path.join(path_class_split,"non_stimuled.feather"))
 			
 			#	2.Not Event
-			df_stimuled = df_stimuled.sample(frac=1,random_state=random_seed)
+			df_stimuled = df_stimuled.sample(frac=1,random_state=random_state)
 			df_stimuled.to_feather(os.path.join(path_class_split,"stimuled.feather"))
 		except Exception as error:
 			lf.log_file(filename="log_file",header_message="Separate Not Event from Event",message=error)
@@ -239,7 +225,6 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 		df_train = pd.read_feather(os.path.join(path_base,folder_window,"dataset.feather"))
 		X = df_train.iloc[:, :-1]
 		y = df_train.iloc[:, -1]
-
 		result = []
 
 		for model in list_classifier:
@@ -260,12 +245,42 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 				case "MLP": classifier = MLPClassifier(random_state=random_state,verbose=verbose,solver="adam",activation="logistic",max_iter=1000,hidden_layer_sizes=(1,2))
 				case "SVM": classifier = svm.SVC(random_state=random_state,verbose=verbose,probability=False,C=1.0, kernel='rbf',degree=3,gamma='scale',coef0=0.0,shrinking=True,tol=0.001,cache_size=200,class_weight=None,max_iter=-1,decision_function_shape='ovr', break_ties=False)
 
-			k_folder_count = 1
-			for train_index, test_index in skf.split(X, y):
-				print(f"Model: {model}({folder_window}). Cross validation fold[{k_folder_count}] ({(rounds/total_rounds)*100:.2f}%)")
+			if k_fold_split:
+				execution = 1
+				for train_index, test_index in skf.split(X, y):
+					print(f"Model: {model}({folder_window}). Cross validation fold[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
 
-				X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-				y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+					X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+					y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+
+					X_train_scaled = scaler.fit_transform(X_train)
+					X_test_scaled = scaler.transform(X_test)
+
+					classifier.fit(X_train_scaled,y_train)
+					y_train_predicted = classifier.predict(X_train_scaled)
+					y_predicted = classifier.predict(X_test_scaled)
+					
+					data = []
+					data = [
+						model
+						,MxN[0]
+						,MxN[1]
+						,str(accuracy_score(y_train, y_train_predicted)*100)
+						,str(accuracy_score(y_test, y_predicted)*100)
+						,str(precision_score(y_test,y_predicted)*100)
+						,str(recall_score(y_test,y_predicted)*100)
+						,str(f1_score(y_test,y_predicted)*100)
+					]
+
+					result.append(data)
+
+					rounds+=1
+					execution+=1
+			else:
+				execution = 1
+				X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,shuffle=True,random_state=random_state)
+			
+				print(f"Model: {model}({folder_window}). Train Test execution[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
 
 				X_train_scaled = scaler.fit_transform(X_train)
 				X_test_scaled = scaler.transform(X_test)
@@ -287,9 +302,9 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 				]
 
 				result.append(data)
-
 				rounds+=1
-				k_folder_count+=1
+				execution+=1
+
 
 		df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_column_type.items()})
 		df = pd.DataFrame(result,columns=df.columns.tolist())
@@ -311,18 +326,20 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
-	path_unified_resized = os.path.join(path_root,"01_unified_resizeddddd")
+	path_unified_resized = os.path.join(path_root,"01_unified_resized")
 	path_class_split = os.path.join(path_root,"02_class_split")
-	path_summarized_window = os.path.join(path_root,"03_summarized_window")
+	path_base = os.path.join(path_root,"03_summarized_window")
 	path_split = os.path.join(path_root,"04_split")
-	path_result = os.path.join(path_root,"05_result")
-	
+	path_result = os.path.join(path_root,"05_result",config["destination_folder_name"])
+	debug = config["debug"]
+
 	x_column_name = "electro_value"
 	y_column_name = "applied_stimulus"
 
 	pd.set_option('display.max_colwidth', None)
 	
-	list_window = new_window_size(total_sample_size=config["sample_size"])
+	if len(config["list_window"]) < 0: list_window = new_window_size(total_sample_size=config["sample_size"])
+	else: list_window = config["list_window"]
 
 	sample_size = int(list_window[0][0] * list_window[0][1])
 	print(f"sample size: {sample_size}")
@@ -336,6 +353,7 @@ def main(config):
 			,y_column_name=y_column_name
 			,path_unified_resized=path_unified_resized
 			,path_parent_root=path_parent_root
+			,random_state=config["random_state"]
 			,sample_size=sample_size
 			,path_class_split=path_class_split	
 		)
@@ -343,20 +361,15 @@ def main(config):
 		df_non_stimuled = pd.read_feather(os.path.join(path_class_split,"non_stimuled.feather"))
 		df_stimuled = pd.read_feather(os.path.join(path_class_split,"stimuled.feather"))
 
-		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_summarized_window,summarize=False,csv=False)
-
+		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=False,csv=False)
 
 	if config["classify"]:
 
-		if k_fold_split == 0: 
-			print(r"Classification runnning: Train test split(80%-20%)...")
-			split_train_test(path_base=os.path.join(path_summarized_window),path_destination=os.path.join(path_split))
-			path_base = path_split
-		else:
-			print(f"Classification running: K-fold({k_fold_split})...")
-			path_base = path_summarized_window
+		if k_fold_split == 0: debug_code(message="Classification runnning: Train test split(80%-20%)",debug=debug)
+		else: debug_code(message="Classification running K-fold", var=k_fold_split,debug=debug)
 
-		print(f"path_destination: {path_result}")
+		
+		debug_code(message="path_destination", var=path_result,debug=debug)
 
 		classify(
 			path_base=path_base
@@ -395,11 +408,15 @@ def mult_text_to_csv(path_origin,path_destination,all_has_title,filename):
 if __name__ == "__main__":
 	
 	try: 
-		config = read_config(os.path.join(os.getcwd(),"config/04_config_ldv"+".json"))
+		config = read_config(os.path.join(os.getcwd(),"config/config.json"))
 		if int(input("Type 1 to show windows list: ")):
-			list_window = new_window_size(total_sample_size=config["sample_size"])
-			print(list_window)
-		
+
+			list_window = config["list_window"]
+			if len(list_window) < 0: 
+				sample_size = int(list_window[0][0] * list_window[0][1])
+				print(new_window_size(total_sample_size=config["sample_size"]))
+			else: print(list_window)
+				
 		if int(input("Type 1 to start process: ")): main(config)
 
 		if int(input("Unify separated txt base files: ")):
@@ -411,6 +428,7 @@ if __name__ == "__main__":
 	except Exception as e: 
 		print(f"An error occurred: {e}")
 
-	while True:
-		user_input = input('Type "Abnegation" to exit: ')
-		if user_input == "Abnegation": break
+	if 1== 0:
+		while True:
+			user_input = input('Type "Abnegation" to exit: ')
+			if user_input == "Abnegation": break
