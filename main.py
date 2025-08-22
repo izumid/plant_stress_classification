@@ -121,7 +121,7 @@ def debug_code(debug,message,var=None):
 
 
 # MARK: Data Preprocessing
-def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,random_state,sample_size,path_class_split):
+def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,unique_value,random_state,sample_size,path_class_split):
 	
 		print("pre processing...")
 
@@ -138,12 +138,14 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,ra
 					path_absolute = os.path.join(path_parent_root,folder)
 					np_array = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
 					np_array = np.concatenate(np_array)
+					if unique_value: np_array = np.unique(np_array)
 
 					rng = np.random.default_rng(random_state)
 					np_array[:] = rng.permutation(np_array)
 					np_array = np_array[:sample_size]
 					print(np_array.shape,folder)
-					np.save(os.path.join(path_unified_resized,folder+".npy"), np_array)
+					
+					np.save(os.path.join(path_unified_resized,f"{folder}.npy"), np_array)
 
 		except Exception as error:
 			lf.log_file(filename="log_file",header_message="Unify data",message=error)
@@ -336,11 +338,18 @@ def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
 	path_root = os.path.join(os.getcwd(),r"data")
-	
-	path_unified_resized = os.path.join(path_root,"01_unified_resized")
-	path_class_split = os.path.join(path_root,"02_class_split")
-	
+	unique_value=config["unique_value"]
+	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
+
+	if unique_value:
+		if balanced_sample: path_unified_resized = os.path.join(path_root,r"01_unified_resized\01_value_unique\01_balanced")
+		else: 				path_unified_resized = os.path.join(path_root,r"01_unified_resized\01_value_unique\02_unbalanced")
+	else:
+		if balanced_sample: path_unified_resized = os.path.join(path_root,r"01_unified_resized\02_value_duplicate\01_balanced")
+		else: 				path_unified_resized = os.path.join(path_root,r"01_unified_resized\02_value_duplicate\02_unbalanced")
+
+	path_class_split = os.path.join(path_root,"02_class_split")
 
 	if summarize: path_base = os.path.join(path_root,"03_summarized_window")
 	else: path_base = os.path.join(path_root,"04_window")
@@ -369,6 +378,7 @@ def main(config):
 			,y_column_name=y_column_name
 			,path_unified_resized=path_unified_resized
 			,path_parent_root=path_parent_root
+			,unique_value=unique_value
 			,random_state=config["random_state"]
 			,sample_size=sample_size
 			,path_class_split=path_class_split	
