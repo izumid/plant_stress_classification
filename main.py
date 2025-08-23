@@ -21,7 +21,7 @@ from sklearn.dummy import DummyClassifier
 import md_logfile as lf
 
 # MARK: New Window Size
-def new_window_size(total_sample_size,start=1,step=1,reverse=True):
+def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
 	list_window = []
 
 	for i in range(start, total_sample_size, step):
@@ -39,6 +39,8 @@ def new_window_size(total_sample_size,start=1,step=1,reverse=True):
 		else: test.append(False)
 
 	list_window.sort(key=lambda x: x[0], reverse=reverse)
+
+	if debug:list_window = [min(list_window, key=lambda x: x[0])]
 	
 	return(list_window)
 
@@ -75,12 +77,12 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		,"applied_stimulus": "int64"
 	}
 
-	filename = "dataset"
+	#filename = "dataset"
 
 	for m,n in list_window:
 		
 		fix_window_data = []
-		folder_window = f"{str(m)}x{str(n)}"
+		file_name = f"{str(m)}x{str(n)}"
 	
 		for dataframe in list_dataframe:
 			data = np.array(dataframe[x_column_name].copy())
@@ -96,12 +98,13 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		else: 
 			df = pd.DataFrame(fix_window_data, columns=["eletric_variation_value","applied_stimulus"])
 		
-		path_aux = os.path.join(path_destination,folder_window)
-		
-		if not os.path.exists(path_aux): os.makedirs(path_aux)
-		
-		if csv: df.to_csv(os.path.join(path_aux,filename+".csv"),sep=';',quotechar='"',encoding="utf-8-sig")
-		else: df.to_feather(os.path.join(path_aux,filename+".feather"))
+		#path_aux = os.path.join(path_destination,folder_window)
+		#if not os.path.exists(path_aux): os.makedirs(path_aux)
+		#if csv: df.to_csv(os.path.join(path_aux,filename+".csv"),sep=';',quotechar='"',encoding="utf-8-sig")
+		#else:  df.to_feather(os.path.join(path_aux,filename+".feather"))
+
+		if not os.path.exists(path_destination): os.makedirs(path_destination)
+		df.to_feather(os.path.join(path_destination,file_name+".feather"))
 
 # MARK: Debug Code
 def debug_code(debug,message,var=None):
@@ -127,10 +130,12 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,un
 
 		dict_result = {x_column_name: "float", y_column_name: "int"}
 		df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_result.items()})
-		
+		np.random.seed(random_state) #setting random seed globaly
+
 		try:
 			# -- Unify Data --
-			# Unify each stimili into a single file
+			# Unify each stimulus/class to his own single file
+
 			if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
 
 			for folder in os.listdir(path_parent_root):
@@ -140,38 +145,48 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,un
 					np_array = np.concatenate(np_array)
 					if unique_value: np_array = np.unique(np_array)
 
-					rng = np.random.default_rng(random_state)
-					np_array[:] = rng.permutation(np_array)
-					np_array = np_array[:sample_size]
-					print(np_array.shape,folder)
+					#randomly shuffle the complete dataset and then get the desired sample size
+					#np_array[:] = np.random.permutation(np_array) 
+					#np_array = np_array[:sample_size]
+					
+					#directly select random samples
+					if len(np_array) >= sample_size: np_array = np.random.choice(np_array,size=sample_size,replace=False) 
+					else:  np_array = np.random.choice(np_array,size=len(np_array),replace=False) #-1 or not?
+
+					#print(np_array.shape,folder)
 					
 					np.save(os.path.join(path_unified_resized,f"{folder}.npy"), np_array)
 
 		except Exception as error:
 			lf.log_file(filename="log_file",header_message="Unify data",message=error)
-		
-		
+			
 		try:
-			#-- Gather data (Single Dataframe) --
+			#-- Gather data  --
+			# Unify all stimulus into Single Dataframe by class (applied or non apllied stimulusx)
+			# Evaluate if that block is working correctly
+
 			if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
 			
 			for filename in sorted(os.listdir(path_unified_resized)):
 				name_stimulus = Path(filename).stem.replace(' ','_').lower()
 				original_array = np.load(os.path.join(path_unified_resized,filename))
 				
-				print("AAAAAAAA",sample_size, len(original_array))
-				if unique_value: sample_size = len(original_array)
-				electo_values = np.random.choice(original_array, size=sample_size, replace=False)
-				print("BBBBBBBBB")
+				#print("AAAAAAAA",sample_size, f"original array: {len(original_array)}")
+				#if unique_value: sample_size = len(original_array)
+				#electo_values = np.random.choice(original_array, size=sample_size, replace=False)
+				#print("BBBBBBBBB",f"electro values: {len(electo_values)}")
 
 				if "before" in name_stimulus: applied_stimulus = 0
 				else: applied_stimulus = 1
+				
+				#if len(original_array) < sample_size: sample_size = sample_size = len(original_array)
 
 				temp_df = pd.DataFrame({
-					x_column_name: electo_values
+					#x_column_name: electo_values
+					x_column_name: original_array
 					,y_column_name: np.repeat(applied_stimulus, sample_size)
 				})
-
+				
 				df = pd.concat([df, temp_df], ignore_index=True)
 			
 			df.to_feather(os.path.join(path_unified_resized,"unified_resized.feather"))
@@ -338,6 +353,8 @@ def main(config):
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
+	sample_size = config["sample_size"]
+	unique_sample_size = config["unique_sample_size"]
 
 	if unique_value:
 		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
@@ -360,11 +377,17 @@ def main(config):
 
 	pd.set_option('display.max_colwidth', None)
 	
-	if len(config["list_window"]) < 0: list_window = new_window_size(total_sample_size=config["sample_size"])
-	else: list_window = config["list_window"]
+	if balanced_sample and unique_value:
+		# override sample_size
+		list_window = new_window_size(total_sample_size=unique_sample_size,debug=debug)
+		sample_size = int(unique_sample_size / 6)  #stimuli number (3) * classes: event & non event (2) = 6
+	else: list_window = new_window_size(total_sample_size=config["sample_size"],debug=debug)
 
-	sample_size = int(list_window[0][0] * list_window[0][1])
+	#if balanced_sample and unique_value:  sample_size = int((list_window[0][0] * list_window[0][1]) / 6)  #stimuli number (3) * classes: event & non event (2) = 6
+	#else:sample_size = int(list_window[0][0] * list_window[0][1])
+
 	print(f"sample size: {sample_size}")
+
 	list_classifier = config["list_classifier"]
 	k_fold_split = config["k_fold_split"]
 
