@@ -4,12 +4,11 @@
 	,"pre_processing_data": true
 	,"summarize": true
 	,"unique_value": true
-	,"balanced_sample": true
+	,"balanced_sample": false
 	,"classify": true
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"k_fold_split": false
 	,"verbose": false
 	,"random_state": 42
-	,"destination_folder_name": "01_large_duplicated_values"
 	,"debug": true
 }

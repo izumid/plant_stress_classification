@@ -158,17 +158,14 @@ def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,un
 			for filename in sorted(os.listdir(path_unified_resized)):
 				name_stimulus = Path(filename).stem.replace(' ','_').lower()
 				original_array = np.load(os.path.join(path_unified_resized,filename))
+				
+				print("AAAAAAAA",sample_size, len(original_array))
+				if unique_value: sample_size = len(original_array)
 				electo_values = np.random.choice(original_array, size=sample_size, replace=False)
+				print("BBBBBBBBB")
 
 				if "before" in name_stimulus: applied_stimulus = 0
 				else: applied_stimulus = 1
-
-				"""
-				for i,char in enumerate(name_stimulus):
-					if char == '_': count_char = i
-			
-				name_stimulus_prefix = name_stimulus[:count_char]
-				"""
 
 				temp_df = pd.DataFrame({
 					x_column_name: electo_values
@@ -337,25 +334,25 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
-	path_root = os.path.join(os.getcwd(),r"data")
+	#path_root = os.path.join(os.getcwd(),r"data")
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
 
 	if unique_value:
-		if balanced_sample: path_unified_resized = os.path.join(path_root,r"01_unified_resized\01_value_unique\01_balanced")
-		else: 				path_unified_resized = os.path.join(path_root,r"01_unified_resized\01_value_unique\02_unbalanced")
+		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
+		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\02_unbalanced"))
 	else:
-		if balanced_sample: path_unified_resized = os.path.join(path_root,r"01_unified_resized\02_value_duplicate\01_balanced")
-		else: 				path_unified_resized = os.path.join(path_root,r"01_unified_resized\02_value_duplicate\02_unbalanced")
+		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\01_balanced"))
+		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\02_unbalanced"))
+	
 
-	path_class_split = os.path.join(path_root,"02_class_split")
-
-	if summarize: path_base = os.path.join(path_root,"03_summarized_window")
-	else: path_base = os.path.join(path_root,"04_window")
+	path_class_split = path_root.replace("custom","02_class_split")
+	if summarize: path_base = path_root.replace("custom","03_summarized_window")
+	else: path_base = path_root.replace("custom","04_window")
 
 	#path_split = os.path.join(path_root,"04_split")
-	path_result = os.path.join(path_root,r"05_experiment_result",config["destination_folder_name"])
+	path_result = path_root.replace("custom","05_experiment_result")
 	debug = config["debug"]
 
 	x_column_name = "electro_value"
@@ -376,7 +373,7 @@ def main(config):
 		rawdata(
 			x_column_name=x_column_name
 			,y_column_name=y_column_name
-			,path_unified_resized=path_unified_resized
+			,path_unified_resized=path_root.replace("custom","01_unified_resized")
 			,path_parent_root=path_parent_root
 			,unique_value=unique_value
 			,random_state=config["random_state"]
