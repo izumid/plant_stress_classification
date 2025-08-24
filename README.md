@@ -1,5 +1,5 @@
 # Concepts
-	- window: based on MxN configuration, where **M** the is window size and **N** samples ammount. Notice that the dataset had 3 stimuli with two classes, in that perspective window [10x524000] results in 60 samples, because 10 samples of each stimuli for the both class was get ((3*2)*10 = 60)
+	- window: based on MxN configuration, where *M* the is window size and *N* samples ammount. 
 
 
 # Json Parameters
@@ -17,7 +17,9 @@
 	- "random_state"(int): ;
 	-"debug"(boolean): ;
 
+
 # Json Template Configurations
+
 ## 1st Experiment
 	"sample_size": 5240000
 	,"unique_sample_size":
@@ -27,7 +29,8 @@
 	,"unique_value": false
 	,"balanced_sample": true
 
-## 2nd Experiment (error)
+
+## 2nd Experiment
 	"sample_size":
 	,"unique_sample_size": 21888
 	,"list_window": []
@@ -36,8 +39,8 @@
 	,"unique_value": true
 	,"balanced_sample": false
 
-## 3th Experiment
 
+## 3th Experiment
 	"sample_size":
 	,"unique_sample_size": 21888
 	,"list_window": []
@@ -46,8 +49,8 @@
 	,"unique_value": true
 	,"balanced_sample": true
 
-## 4th Experiment
 
+## 4th Experiment
 	"sample_size": 5240000
 	,"unique_sample_size":
 	,"list_window": []

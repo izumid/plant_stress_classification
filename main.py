@@ -22,6 +22,13 @@ import md_logfile as lf
 
 # MARK: New Window Size
 def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
+	"""
+		Description:
+
+		Arguments:
+		
+	"""
+
 	list_window = []
 
 	for i in range(start, total_sample_size, step):
@@ -32,12 +39,6 @@ def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
 	
 	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
 	list_window = list_window + aux
-	
-	test =[]
-	for x in list_window:
-		if int(x[0] * x[1]) == 21888: test.append(True)
-		else: test.append(False)
-
 	list_window.sort(key=lambda x: x[0], reverse=reverse)
 
 	if debug:list_window = [min(list_window, key=lambda x: x[0])]
@@ -46,6 +47,13 @@ def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
 
 
 def try_cast(value,type=None):
+	"""
+		Description:
+
+		Arguments:
+
+	"""
+
 	if type == float:
 		try: return(float(value))
 		except: return(value) 
@@ -62,9 +70,18 @@ def read_config(path_absolute):
 
 
 # MARK: Windowing
-def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destination,summarize,csv=False):
+def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destination,summarize):
 	"""
-		While get slices of samples summarized then with statisticial distribution measures.
+		Description:
+			While get slices of samples summarized then with statisticial distribution measures.
+
+		Arguments:
+			list_dataframe
+			x_column_name
+			y_column_name
+			list_window
+			path_destination
+			summarize
 	"""
 
 	cols = {
@@ -83,26 +100,27 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		
 		fix_window_data = []
 		file_name = f"{str(m)}x{str(n)}"
-	
+		print(file_name)
+		print(len(list_dataframe))
+		
 		for dataframe in list_dataframe:
 			data = np.array(dataframe[x_column_name].copy())
 			applied_stimulus = dataframe[y_column_name].iloc[0]
+
 			for i in (range(0,len(data),n)):
 				window = np.array(data[i:i+n])
-				if summarize: fix_window_data.append([np.mean(window),stats.iqr(window),np.var(window),np.std(window),stats.skew(window),stats.kurtosis(window),applied_stimulus])
+				if summarize: 
+					fix_window_data.append([np.mean(window),stats.iqr(window),np.var(window),np.std(window),stats.skew(window),stats.kurtosis(window),applied_stimulus])
+					print(11)
 				else: fix_window_data.append([window.tolist(),applied_stimulus])
 
 		if summarize:
 			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in cols.items()})
 			df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
+			print(22)
 		else: 
 			df = pd.DataFrame(fix_window_data, columns=["eletric_variation_value","applied_stimulus"])
 		
-		#path_aux = os.path.join(path_destination,folder_window)
-		#if not os.path.exists(path_aux): os.makedirs(path_aux)
-		#if csv: df.to_csv(os.path.join(path_aux,filename+".csv"),sep=';',quotechar='"',encoding="utf-8-sig")
-		#else:  df.to_feather(os.path.join(path_aux,filename+".feather"))
-
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
 		df.to_feather(os.path.join(path_destination,file_name+".feather"))
 
@@ -112,7 +130,7 @@ def debug_code(debug,message,var=None):
 	Description:
 		Print messages across the process to verify data behaviour.
 
-	Args:
+	Arguments:
 		message(str): text to identify the code process the message are about;
 		var(any): variable values to validade;
 		debug(bool): true print's the messages;
@@ -123,96 +141,116 @@ def debug_code(debug,message,var=None):
 		else: print(f"{message}: \r\n{var};\r\n")
 
 
-# MARK: Data Preprocessing
+# MARK: Wrangling
 def rawdata(x_column_name,y_column_name,path_unified_resized,path_parent_root,unique_value,random_state,sample_size,path_class_split):
-	
-		print("pre processing...")
+	"""
+		Description: transform data to prepare then to the classification process;
 
-		dict_result = {x_column_name: "float", y_column_name: "int"}
-		df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_result.items()})
-		np.random.seed(random_state) #setting random seed globaly
+		Arguments:
+			x_column_name(string): ;
+			y_column_name(string): ;
+			path_unified_resized(string): ;
+			path_parent_root(string): ;
+			unique_value(boolean): ;
+			random_state(int): ;
+			sample_size(int): ;
+			path_class_split(boolean): ;
+		
+	"""
+	print("pre processing...")
 
-		try:
-			# -- Unify Data --
-			# Unify each stimulus/class to his own single file
+	dict_result = {x_column_name: "float", y_column_name: "int"}
+	df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_result.items()})
+	np.random.seed(random_state) #setting random seed globaly
 
-			if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
+	try:
+		# -- Unify Data --
+		# Unify each stimulus/class to his own single file
 
-			for folder in os.listdir(path_parent_root):
-				if "lectrodes" not in folder:
-					path_absolute = os.path.join(path_parent_root,folder)
-					np_array = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
-					np_array = np.concatenate(np_array)
-					if unique_value: np_array = np.unique(np_array)
+		if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
 
-					#randomly shuffle the complete dataset and then get the desired sample size
-					#np_array[:] = np.random.permutation(np_array) 
-					#np_array = np_array[:sample_size]
-					
-					#directly select random samples
-					if len(np_array) >= sample_size: np_array = np.random.choice(np_array,size=sample_size,replace=False) 
-					else:  np_array = np.random.choice(np_array,size=len(np_array),replace=False) #-1 or not?
+		for folder in os.listdir(path_parent_root):
+			if "lectrodes" not in folder:
+				path_absolute = os.path.join(path_parent_root,folder)
+				np_array = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
+				np_array = np.concatenate(np_array)
+				if unique_value: np_array = np.unique(np_array)
 
-					#print(np_array.shape,folder)
-					
-					np.save(os.path.join(path_unified_resized,f"{folder}.npy"), np_array)
-
-		except Exception as error:
-			lf.log_file(filename="log_file",header_message="Unify data",message=error)
-			
-		try:
-			#-- Gather data  --
-			# Unify all stimulus into Single Dataframe by class (applied or non apllied stimulusx)
-			# Evaluate if that block is working correctly
-
-			if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
-			
-			for filename in sorted(os.listdir(path_unified_resized)):
-				name_stimulus = Path(filename).stem.replace(' ','_').lower()
-				original_array = np.load(os.path.join(path_unified_resized,filename))
+				#randomly shuffle the complete dataset and then get the desired sample size
+				#np_array[:] = np.random.permutation(np_array) 
+				#np_array = np_array[:sample_size]
 				
-				#print("AAAAAAAA",sample_size, f"original array: {len(original_array)}")
-				#if unique_value: sample_size = len(original_array)
-				#electo_values = np.random.choice(original_array, size=sample_size, replace=False)
-				#print("BBBBBBBBB",f"electro values: {len(electo_values)}")
+				#directly select random samples
+				if len(np_array) >= sample_size: np_array = np.random.choice(np_array,size=sample_size,replace=False) 
+				else:  np_array = np.random.choice(np_array,size=len(np_array),replace=False) #-1 or not?
 
-				if "before" in name_stimulus: applied_stimulus = 0
-				else: applied_stimulus = 1
+				print(np_array.shape,folder)
 				
-				#if len(original_array) < sample_size: sample_size = sample_size = len(original_array)
+				np.save(os.path.join(path_unified_resized,f"{folder}.npy"), np_array)
 
-				temp_df = pd.DataFrame({
-					#x_column_name: electo_values
-					x_column_name: original_array
-					,y_column_name: np.repeat(applied_stimulus, sample_size)
-				})
-				
-				df = pd.concat([df, temp_df], ignore_index=True)
-			
-			df.to_feather(os.path.join(path_unified_resized,"unified_resized.feather"))
-		except Exception as error:
-			lf.log_file(filename="log_file",header_message="Gather data (Single Dataframe)",message=error)
-			
-		try:
-			# -- Separate Not Event from Event --
-			df_non_stimuled = df.query(f"{y_column_name} == 0").copy()
-			df_stimuled = df.query(f"{y_column_name} == 1").copy()
-			if not os.path.exists(path_class_split): os.makedirs(path_class_split)
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="Unify data",message=error)
+		
+	try:
+		#-- Gather data  --
+		# Unify all stimulus into Single Dataframe by class (applied or non apllied stimulusx)
+		# Evaluate if that block is working correctly
 
-			# -- Seperate class to correct windowing --
-			#	1.Not Event
-			df_non_stimuled = df_non_stimuled.sample(frac=1, random_state=random_state)
-			df_non_stimuled.to_feather(os.path.join(path_class_split,"non_stimuled.feather"))
+		if not os.path.exists(path_unified_resized): os.makedirs(path_unified_resized)
+		
+		for filename in sorted(os.listdir(path_unified_resized)):
+			name_stimulus = Path(filename).stem.replace(' ','_').lower()
+			original_array = np.load(os.path.join(path_unified_resized,filename))
 			
-			#	2.Not Event
-			df_stimuled = df_stimuled.sample(frac=1,random_state=random_state)
-			df_stimuled.to_feather(os.path.join(path_class_split,"stimuled.feather"))
-		except Exception as error:
-			lf.log_file(filename="log_file",header_message="Separate Not Event from Event",message=error)
-				
+			#print("AAAAAAAA",sample_size, f"original array: {len(original_array)}")
+			#if unique_value: sample_size = len(original_array)
+			#electo_values = np.random.choice(original_array, size=sample_size, replace=False)
+			#print(f"electro values: {len(electo_values)}")
+
+			if "before" in name_stimulus: applied_stimulus = 0
+			else: applied_stimulus = 1
+			
+			#if len(original_array) < sample_size: sample_size = sample_size = len(original_array)
+
+			temp_df = pd.DataFrame({
+				#x_column_name: electo_values
+				x_column_name: original_array
+				,y_column_name: np.repeat(applied_stimulus, sample_size)
+			})
+
+			df = pd.concat([df, temp_df], ignore_index=True)
+		
+		df.to_feather(os.path.join(path_unified_resized,"unified_resized.feather"))
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="Gather data (Single Dataframe)",message=error)
+		
+	try:
+		# -- Separate Not Event from Event --
+		df_non_stimuled = df.query(f"{y_column_name} == 0").copy()
+		df_stimuled = df.query(f"{y_column_name} == 1").copy()
+		if not os.path.exists(path_class_split): os.makedirs(path_class_split)
+
+		# -- Seperate class to correct windowing --
+		#	1.Not Event
+		df_non_stimuled = df_non_stimuled.sample(frac=1, random_state=random_state)
+		df_non_stimuled.to_feather(os.path.join(path_class_split,"non_stimuled.feather"))
+		
+		#	2.Not Event
+		df_stimuled = df_stimuled.sample(frac=1,random_state=random_state)
+		df_stimuled.to_feather(os.path.join(path_class_split,"stimuled.feather"))
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="Separate Not Event from Event",message=error)
+			
 
 # MARK: Classify
 def classify(path_base,list_window,path_destination,list_classifier,random_state,verbose,k_fold_split,filename="result"):
+	"""
+		Description:
+
+		Arguments:
+		
+	"""
+	
 	int_verbose = int(verbose)
 	scaler = MinMaxScaler()
 	if not os.path.exists(path_destination): os.makedirs(path_destination)
@@ -355,13 +393,15 @@ def main(config):
 	summarize = config["summarize"]
 	sample_size = config["sample_size"]
 	unique_sample_size = config["unique_sample_size"]
+	observation_size = config["x_size_category"] * config["y_size_class"]
 
 	if unique_value:
 		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
 		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\02_unbalanced"))
 	else:
-		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\01_balanced"))
-		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\02_unbalanced"))
+		#if balanced_sample: 
+		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\01_balanced"))
+		#else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\02_unbalanced"))
 	
 
 	path_class_split = path_root.replace("custom","02_class_split")
@@ -377,11 +417,13 @@ def main(config):
 
 	pd.set_option('display.max_colwidth', None)
 	
-	if balanced_sample and unique_value:
+	if unique_value:
 		# override sample_size
 		list_window = new_window_size(total_sample_size=unique_sample_size,debug=debug)
-		sample_size = int(unique_sample_size / 6)  #stimuli number (3) * classes: event & non event (2) = 6
-	else: list_window = new_window_size(total_sample_size=config["sample_size"],debug=debug)
+		if balanced_sample: sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
+	else: 
+		list_window = new_window_size(total_sample_size=config["sample_size"],debug=debug)
+		sample_size = int(sample_size / observation_size)
 
 	#if balanced_sample and unique_value:  sample_size = int((list_window[0][0] * list_window[0][1]) / 6)  #stimuli number (3) * classes: event & non event (2) = 6
 	#else:sample_size = int(list_window[0][0] * list_window[0][1])
@@ -393,6 +435,7 @@ def main(config):
 
 	# used process
 	if config["pre_processing_data"]:
+		
 		rawdata(
 			x_column_name=x_column_name
 			,y_column_name=y_column_name
@@ -407,7 +450,7 @@ def main(config):
 		df_non_stimuled = pd.read_feather(os.path.join(path_class_split,"non_stimuled.feather"))
 		df_stimuled = pd.read_feather(os.path.join(path_class_split,"stimuled.feather"))
 
-		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=summarize,csv=False)
+		windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=summarize)
 		
 
 	if config["classify"]:
