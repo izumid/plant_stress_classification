@@ -93,6 +93,7 @@ def dataset_stimulus_class(x_column_name,y_column_name,path_destination,path_ori
 				,y_column_name: np.repeat(applied_stimulus, sample_size)
 			})
 
+			if not os.path.exists(path_destination): os.makedirs(path_destination)
 			temp_df.to_feather(os.path.join(path_destination,f"{os.path.splitext(filename)[0].replace(' ','_').lower()}.feather"))
 		
 		
@@ -178,4 +179,91 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
 		df.to_feather(os.path.join(path_destination,file_name+".feather"))
+
+
+# MARK: NEW
+def windowing_new(dataset_structure,path_origin,sample_size,list_window,summarize,path_destination):
+	"""
+		Description: 
+
+		Arguments:
+			x_column_name(string): ;
+			y_column_name(string): ;
+			path_origin(string): ;
+			path_parent_root(string): ;
+			sample_size(int): ;
+	"""
+
+	cols = {
+		"stimulus_stage": "category"
+		,"mean": "float64"
+		,"inter_quartile_range": "float64"
+		,"variance": "float64"
+		,"standard_deviation": "float64"
+		,"skew": "float64"
+		,"kustosis": "float64"
+		,"applied_stimulus": "int64"
+	}
+
+		
+	try:
+		# Evaluate if that block is working correctly
+	
+		for filename in sorted(os.listdir(path_origin)):
+			stimulus_name = Path(filename).stem.replace(' ','_').lower()
+			x_value = np.load(os.path.join(path_origin,filename))
+			
+			if "before" in stimulus_name: stimulus_applied = 0
+			else: stimulus_applied = 1
+			
+			#if len(original_array) < sample_size: sample_size = sample_size = len(original_array)
+
+			df = pd.DataFrame({col: pd.Series(dtype=dt) for col, dt in dataset_structure.items()})
+			value = [np.repeat(stimulus_name, sample_size), x_value, np.repeat(stimulus_applied, sample_size)]
+
+			idx = 0
+			for key in dataset_structure.keys():
+				df[key] = value[idx]
+				idx+=1
+			
+			for m,n in list_window:
+				
+				fix_window_data = []
+				file_name = f"{str(m)}x{str(n)}"
+				print(f"file name readed: {file_name}")
+				
+
+				for stimulus_file in os.listdir(path_origin):
+					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
+					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
+					stimulus_value = x_value
+					stimulus_applied = stimulus_applied
+
+					for i in (range(0,len(stimulus_value),n)):
+						window = np.array(stimulus_value[i:i+n])
+						if summarize: 
+							fix_window_data.append(
+								[
+									stimulus_stage
+									,np.mean(window)
+									,stats.iqr(window)
+									,np.var(window)
+									,np.std(window)
+									,stats.skew(window)
+									,stats.kurtosis(window)
+									,stimulus_applied
+								]
+							)
+						else: fix_window_data.append([window.tolist(),stimulus_applied])
+
+				if summarize:
+					df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in cols.items()})
+					df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
+				else: 
+					df = pd.DataFrame(fix_window_data, columns=["eletric_variation_value","applied_stimulus"])
+				
+				if not os.path.exists(path_destination): os.makedirs(path_destination)
+				df.to_feather(os.path.join(path_destination,file_name+".feather"))
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 

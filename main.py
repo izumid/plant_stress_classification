@@ -102,6 +102,8 @@ def main(config):
 	sample_size = config["sample_size"]
 	unique_sample_size = config["unique_sample_size"]
 	observation_size = config["x_size_category"] * config["y_size_class"]
+	
+	dataset_structure = {"stimulus_stage": "category", "electro_value": float, "stimulus_applied": int}
 
 	if unique_value:
 		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
@@ -156,16 +158,28 @@ def main(config):
 			,sample_size=sample_size
 		)
 		
-		wr.dataset_stimulus_class(
-			x_column_name
-			,y_column_name
-			#,y_event_value=config["y_event_value"]
-			,path_destination=path_stimulus_class_splited
-			,path_origin=path_stimulus_category_class_reduced
-			,sample_size=sample_size
-			#,random_state=random_state
-		)
-		
+		if 1==0:
+			wr.dataset_stimulus_class(
+				x_column_name
+				,y_column_name
+				#,y_event_value=config["y_event_value"]
+				,path_destination=path_stimulus_class_splited
+				,path_origin=path_stimulus_category_class_reduced
+				,sample_size=sample_size
+				#,random_state=random_state
+			)
+		else:
+			wr.windowing_new(
+				dataset_structure=dataset_structure
+				,path_origin=path_stimulus_category_class_reduced
+				,sample_size=sample_size
+				,list_window=list_window
+				,summarize=summarize
+				,path_destination= path_root.replace("custom","03_windowing_new")
+				
+			)
+
+			
 		# rawdata(
 		# 	x_column_name=x_column_name
 		# 	,y_column_name=y_column_name
