@@ -113,7 +113,9 @@ def main(config):
 		#else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\02_unbalanced"))
 	
 
-	if summarize: path_base = path_root.replace("custom","03_summarized_window")
+	if summarize: 
+		#path_base = path_root.replace("custom","03_summarized_window")
+		path_base = path_root.replace("custom","03_windowing_new")
 	else: path_base = path_root.replace("custom","04_window")
 
 	#path_split = os.path.join(path_root,"04_split")

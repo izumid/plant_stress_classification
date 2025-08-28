@@ -63,7 +63,8 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 			#df_train = pd.read_feather(os.path.join(path_base,folder_window,"dataset.feather"))
 			df_train = pd.read_feather(os.path.join(path_base,f"{window}.feather"))
 			print(df_train.head())
-			X = df_train.iloc[:, :-1]
+			X_label =  df_train.iloc[:, 0] #df_train["stimulus_stage"]
+			X = df_train.iloc[:, 1:-1]
 			y = df_train.iloc[:, -1]
 			result = []
 
@@ -90,7 +91,7 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 
 				if k_fold_split:
 					execution = 1
-					for train_index, test_index in skf.split(X, df_train["stimulus_stage"]):
+					for train_index, test_index in skf.split(X, X_label):
 						print(f"Model: {model}({window}). Cross validation fold[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
 
 						X_train, X_test = X.iloc[train_index], X.iloc[test_index]
