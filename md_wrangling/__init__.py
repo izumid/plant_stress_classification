@@ -11,6 +11,43 @@ sys.path.append(parent_dir)
 import md_logfile as lf
 
 # MARK: Wrangling
+
+def stimulus_subsampling(path_destination,path_origin,random_state,sample_size):
+	"""
+		Description: Unify each stimulus per class to his own single file, limiting the dataset with the desired sample size;
+
+		Arguments:
+			path_destination(string): 
+			path_origin(string): input data path. In that case saved in N .txt fikes;
+			path_parent_root(string): the main output folder to save data as numpy arrays and start processing the steps;
+			random_state(int): pseudo random to chose registries (observations) of dataset;
+			sample_size(int): observations size of the main dataset;
+	"""
+
+	print("pre processing...")
+
+	np.random.seed(random_state) #setting random seed globaly
+
+	try:
+		if not os.path.exists(path_destination): 
+			os.makedirs(path_destination)
+
+			for folder in os.listdir(path_origin):
+				if "lectrodes" not in folder:
+					path_absolute = os.path.join(path_origin,folder)
+					joined_data = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
+					joined_data = np.concatenate(joined_data)
+
+					joined_data = np.random.choice(joined_data,size=sample_size,replace=False) 
+
+					print(joined_data.shape,folder)
+					
+					np.save(os.path.join(path_destination,f"{folder}.npy"), joined_data)
+
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="stimulus_category_class_reduced: txt files to numpy")
+
+
 def stimulus_category_class_reduced(path_destination,path_origin,unique_value,random_state,sample_size):
 	"""
 		Description: Unify each stimulus per class to his own single file;
@@ -117,6 +154,47 @@ def dataset_stimulus_class(x_column_name,y_column_name,path_destination,path_ori
 		lf.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 
 
+def experiment_data(random_state,path_destination,path_origin,sample_size,unique_value):
+	"""
+		Description: Unify each stimulus per class to his own single file;
+
+		Arguments:
+			path_origin(string): ;
+			path_parent_root(string): ;
+			unique_value(boolean): ;
+			random_state(int): ;
+			sample_size(int): ;		
+	"""
+
+	print("pre processing...")
+
+	np.random.seed(random_state) #setting random seed globaly
+
+	try:
+		if not os.path.exists(path_destination): os.makedirs(path_destination)
+
+		for file in os.listdir(path_origin):
+
+				path_absolute = os.path.join(path_origin,file)
+				stimulus_data = np.load(os.path.join(path_absolute,file))
+				stimulus_data_size = len(stimulus_data)
+
+				if unique_value: stimulus_data = np.unique(stimulus_data)
+
+				if stimulus_data_size >= sample_size: 
+					stimulus_data = np.random.choice(stimulus_data,size=sample_size,replace=False) 
+				else:
+					stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
+
+				print(stimulus_data.shape,file)
+				
+				np.save(os.path.join(path_destination,f"{file}.npy"), stimulus_data)
+
+	except Exception as error:
+		lf.log_file(filename="log_file",header_message="stimulus_category_class_reduced: txt files to numpy")
+
+
+
 # MARK: Windowing
 def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destination,summarize):
 	"""
@@ -181,7 +259,7 @@ def windowing(list_dataframe,x_column_name,y_column_name,list_window,path_destin
 		df.to_feather(os.path.join(path_destination,file_name+".feather"))
 
 # MARK: NEW
-def windowing_new(dataset_structure,path_origin,sample_size,list_window,summarize,path_destination):
+def fixed_window_dataset(dataset_structure,path_origin,sample_size,list_window,summarize,path_destination):
 	"""
 		Description: 
 
@@ -206,20 +284,6 @@ def windowing_new(dataset_structure,path_origin,sample_size,list_window,summariz
 
 		
 	try:
-		# Evaluate if that block is working correctly
-	
-		#for filename in sorted(os.listdir(path_origin)):
-			#stimulus_name = Path(filename).stem.replace(' ','_').lower()
-			#x_value = np.load(os.path.join(path_origin,filename))
-		
-			#df = pd.DataFrame({col: pd.Series(dtype=dt) for col, dt in dataset_structure.items()})
-			#value = [np.repeat(stimulus_name, sample_size), x_value, np.repeat(stimulus_applied, sample_size)]
-
-			# idx = 0
-			# for key in dataset_structure.keys():
-			# 	df[key] = value[idx]
-			# 	idx+=1
-			
 			for m,n in list_window:
 				
 			
@@ -239,26 +303,21 @@ def windowing_new(dataset_structure,path_origin,sample_size,list_window,summariz
 					for i in (range(0,len(stimulus_value),n)):
 						window = np.array(stimulus_value[i:i+n])
 						print(stimulus_file, i,i+n)
-						if summarize: 
-							fix_window_data.append(
-								[
-									stimulus_stage
-									,np.mean(window)
-									,stats.iqr(window)
-									,np.var(window)
-									,np.std(window)
-									,stats.skew(window)
-									,stats.kurtosis(window)
-									,stimulus_applied
-								]
-							)
-						else: fix_window_data.append([window.tolist(),stimulus_applied])
+						fix_window_data.append(
+							[
+								stimulus_stage
+								,np.mean(window)
+								,stats.iqr(window)
+								,np.var(window)
+								,np.std(window)
+								,stats.skew(window)
+								,stats.kurtosis(window)
+								,stimulus_applied
+							]
+						)
 
-				if summarize:
-					df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in cols.items()})
-					df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
-				else: 
-					df = pd.DataFrame(fix_window_data, columns=["eletric_variation_value","applied_stimulus"])
+				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in cols.items()})
+				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
 				
 				if not os.path.exists(path_destination): os.makedirs(path_destination)
 				df.to_feather(os.path.join(path_destination,file_name+".feather"))

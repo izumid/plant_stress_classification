@@ -95,7 +95,8 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
-	#path_root = os.path.join(os.getcwd(),r"data")
+	path_root = os.path.join(os.getcwd(),r"data\custom")
+	path_subsampled = os.path.join(os.getcwd(),r"data\00_subsampled_data")
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
@@ -103,37 +104,30 @@ def main(config):
 	unique_sample_size = config["unique_sample_size"]
 	observation_size = config["x_size_category"] * config["y_size_class"]
 	dataset_structure = {"stimulus_stage": "category", "electro_value": float, "stimulus_applied": int}
+	random_state = config["random_state"]
+
+	wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
 	if unique_value:
 		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
 		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\02_unbalanced"))
 	else:
-		#if balanced_sample: 
 		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\01_balanced"))
-		#else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\02_unbalanced"))
 	
-
-	if summarize: 
-		#path_base = path_root.replace("custom","03_summarized_window")
-		path_base = path_root.replace("custom","03_windowing_new")
-	else: path_base = path_root.replace("custom","04_window")
-
+	
+	path_base = path_root.replace("custom","03_windowing_new")
 	#path_split = os.path.join(path_root,"04_split")
 	path_result = path_root.replace("custom","05_experiment_result")
+	
 	debug = config["debug"]
-
-	x_column_name = "electro_value"
-	y_column_name = "applied_stimulus"
 
 	pd.set_option('display.max_colwidth', None)
 	
 	if unique_value:
-		# override sample_size
 		list_window = new_window_size(total_sample_size=unique_sample_size,debug=debug)
 		if balanced_sample: sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
 	else: 
 		list_window = new_window_size(total_sample_size=config["sample_size"],debug=debug)
-		
 		#sample_size = int(sample_size / observation_size) #testing use or dont using calc
 		
 
@@ -142,44 +136,44 @@ def main(config):
 
 	print(f"sample size: {sample_size}")
 
-	list_classifier = config["list_classifier"]
-	k_fold_split = config["k_fold_split"]
+
 
 	# used process
 	
-	random_state = config["random_state"]
+	
 	if config["pre_processing_data"]:
-
 		path_stimulus_category_class_reduced=path_root.replace("custom","01_stimulus_category_class_reduced")
 		path_stimulus_class_splited = path_root.replace("custom","02_dataset_stimulus_class")
-		
-		wr.stimulus_category_class_reduced(
-			path_destination=path_stimulus_category_class_reduced
-			,path_origin=path_parent_root
-			,unique_value=unique_value
-			,random_state=random_state
+
+		# wr.stimulus_category_class_reduced(
+		# 	path_destination=path_stimulus_category_class_reduced
+		# 	,path_origin=path_parent_root
+		# 	,unique_value=unique_value
+		# 	,random_state=random_state
+		# 	,sample_size=sample_size
+		# )
+
+
+		#wr.dataset_stimulus_class(
+		wr.experiment_data(
+			x_column_name = "electro_value"
+			,y_column_name = "applied_stimulus"
+			#,y_event_value=config["y_event_value"]
+			,path_destination=path_stimulus_class_splited
+			,path_origin=path_stimulus_category_class_reduced
 			,sample_size=sample_size
+			#,random_state=random_state
 		)
-		if 1==0:
-			wr.dataset_stimulus_class(
-				x_column_name
-				,y_column_name
-				#,y_event_value=config["y_event_value"]
-				,path_destination=path_stimulus_class_splited
-				,path_origin=path_stimulus_category_class_reduced
-				,sample_size=sample_size
-				#,random_state=random_state
-			)
-		else:
-			wr.windowing_new(
-				dataset_structure=dataset_structure
-				,path_origin=path_stimulus_category_class_reduced
-				,sample_size=sample_size
-				,list_window=list_window
-				,summarize=summarize
-				,path_destination= path_root.replace("custom","03_windowing_new")
-				
-			)
+	
+		wr.fixed_window_dataset(
+			dataset_structure=dataset_structure
+			,path_origin=path_subsampled
+			,sample_size=sample_size
+			,list_window=list_window
+			,summarize=summarize
+			,path_destination= path_root.replace("custom","03_fixed_window_dataset")
+			
+		)
 
 		
 		# rawdata(
@@ -202,6 +196,8 @@ def main(config):
 		
 
 	if config["classify"]:
+		list_classifier = config["list_classifier"]
+		k_fold_split = config["k_fold_split"]
 
 		if k_fold_split == 0: debug_code(message="Classification runnning: Train test split(80%-20%)",debug=debug)
 		else: debug_code(message=f"Classification running K-fold: {k_fold_split}",debug=debug)
