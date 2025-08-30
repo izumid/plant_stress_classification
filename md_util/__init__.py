@@ -2,6 +2,25 @@ import os
 import traceback
 import datetime
 
+def debug(show,message,var=None):
+	"""
+	Description:
+		Print messages across the process to verify data behaviour.
+
+	Arguments:
+		message(str): text to identify the code process the message are about;
+		var(any): variable values to validade;
+		debug(bool): true print's the messages;
+	"""	
+
+	if show: 
+		if var is None: print(f"{message};\r\n")
+		else: print(f"{message}: \r\n{var};\r\n")
+
+
+def log_time(on,message,time):
+	if on == 1: print(f"[Time] - {message} ({time})")
+
 def write_info(file, header, message):
 	file.write(header)
 	if message is None: traceback.print_exc(file=file)
@@ -23,6 +42,3 @@ def log_file(filename,header_message,message=None):
 		with open(filename, 'w+',encoding="utf-8") as f:
 			write_info(file=f,header=header,message=message)
 
-
-def log_time(on,message,time):
-	if on == 1: print(f"[Time] - {message} ({time})")

@@ -3,34 +3,12 @@ import json
 
 import pandas as pd
 
-import md_logfile as lf
+import md_util as ut
 import md_wrangling as wr
 import md_classify as cl
 
 # MARK: New Window Size
-def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
-	"""
-		Description:
 
-		Arguments:
-		
-	"""
-
-	list_window = []
-
-	for i in range(start, total_sample_size, step):
-		if total_sample_size % i ==0:
-			sample = (total_sample_size/i)
-			window = total_sample_size / sample
-			if window >= 10 and sample >=100: list_window.append([int(window),int(sample)])
-	
-	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
-	list_window = list_window + aux
-	list_window.sort(key=lambda x: x[0], reverse=reverse)
-
-	if debug:list_window = [min(list_window, key=lambda x: x[0])]
-	
-	return(list_window)
 
 
 def try_cast(value,type=None):
@@ -61,23 +39,8 @@ def read_config(path_absolute):
 		with open(path_absolute, 'r') as f: data = json.load(f)
 		return(data)
 	except Exception as error:
-		lf.log_file(filename="log_file",header_message="read_config")
+		ut.log_file(filename="log_file",header_message="read_config")
 
-
-def debug_code(debug,message,var=None):
-	"""
-	Description:
-		Print messages across the process to verify data behaviour.
-
-	Arguments:
-		message(str): text to identify the code process the message are about;
-		var(any): variable values to validade;
-		debug(bool): true print's the messages;
-	"""	
-
-	if debug: 
-		if var is None: print(f"{message};\r\n")
-		else: print(f"{message}: \r\n{var};\r\n")
 
 
 def result_feather_read(path_destination,filename,filter_model=False,dummy=False):
@@ -94,48 +57,64 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 # MARK: Main
 def main(config):
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
+	path_original_data = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
 	path_root = os.path.join(os.getcwd(),r"data\custom")
 	path_subsampled = os.path.join(os.getcwd(),r"data\00_subsampled_data")
+	path_stimulus_data_joined = os.path.join(os.getcwd(),r"data\00_stimulus_data_joined")
+	path_experiment_data =  os.path.join(os.getcwd(),r"data\01_experiment_data")
+	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\02_fixed_window_dataset")	
+	
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
 	sample_size = config["sample_size"]
 	unique_sample_size = config["unique_sample_size"]
 	observation_size = config["x_size_category"] * config["y_size_class"]
-	dataset_structure = {"stimulus_stage": "category", "electro_value": float, "stimulus_applied": int}
+	
 	random_state = config["random_state"]
+	sample_unique_length = config["sample_unique_length"]
+	show_debug_message = config["show_debug_message"]
 
-	wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
+	#wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
 	if unique_value:
-		if balanced_sample: path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\01_balanced"))
-		else: 				path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_unique\02_unbalanced"))
+		list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+		#sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
+
+		if balanced_sample: 
+			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
+			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
+			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
+		else: 				
+			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_unbalanced"))
+			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_unbalanced")
+			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_unbalanced")
 	else:
-		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_duplicate\01_balanced"))
-	
-	
-	path_base = path_root.replace("custom","03_windowing_new")
-	#path_split = os.path.join(path_root,"04_split")
-	path_result = path_root.replace("custom","05_experiment_result")
-	
-	debug = config["debug"]
+		list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
 
-	pd.set_option('display.max_colwidth', None)
+		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicate\01_balanced"))
+		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
+		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicate\01_balanced")
 	
-	if unique_value:
-		list_window = new_window_size(total_sample_size=unique_sample_size,debug=debug)
-		if balanced_sample: sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-	else: 
-		list_window = new_window_size(total_sample_size=config["sample_size"],debug=debug)
-		#sample_size = int(sample_size / observation_size) #testing use or dont using calc
+	
+	
+	# path_base = path_root.replace("custom","03_windowing_new")
+	# #path_split = os.path.join(path_root,"04_split")
+	# path_result = path_root.replace("custom","05_experiment_result")
+	# pd.set_option('display.max_colwidth', None)
+	
+	
+	# if unique_value:
+	# 	list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+	# 	if balanced_sample: sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
+	# else: 
+	# 	list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
+	# 	#sample_size = int(sample_size / observation_size) #testing use or dont using calc
 		
 
 	#if balanced_sample and unique_value:  sample_size = int((list_window[0][0] * list_window[0][1]) / 6)  #stimuli number (3) * classes: event & non event (2) = 6
 	#else:sample_size = int(list_window[0][0] * list_window[0][1])
-
-	print(f"sample size: {sample_size}")
-
 
 
 	# used process
@@ -154,25 +133,43 @@ def main(config):
 		# )
 
 
-		#wr.dataset_stimulus_class(
-		wr.experiment_data(
-			x_column_name = "electro_value"
-			,y_column_name = "applied_stimulus"
-			#,y_event_value=config["y_event_value"]
-			,path_destination=path_stimulus_class_splited
-			,path_origin=path_stimulus_category_class_reduced
-			,sample_size=sample_size
-			#,random_state=random_state
+		# wr.dataset_stimulus_class(
+		# 	x_column_name = "electro_value"
+		# 	,y_column_name = "applied_stimulus"
+		# 	#,y_event_value=config["y_event_value"]
+		# 	,path_destination=path_stimulus_class_splited
+		# 	,path_origin=path_stimulus_category_class_reduced
+		# 	,sample_size=sample_size
+		# 	#,random_state=random_state
+		# )
+		
+		wr.join_stimulus_data(
+			path_origin=path_original_data
+			,path_destination=path_stimulus_data_joined
+			,random_state=random_state
+			,show_debug_message=show_debug_message
 		)
+
+		wr.experiment_data(
+			#x_column_name = "electro_value"
+			#,y_column_name = "applied_stimulus"
+			path_origin=path_stimulus_data_joined
+			,path_destination=path_experiment_data
+			,sample_size=sample_size
+			,unique_value=unique_value
+			,balanced_sample=balanced_sample
+			,sample_unique_length=sample_unique_length
+			,show_debug_message=show_debug_message
+		)
+
 	
 		wr.fixed_window_dataset(
-			dataset_structure=dataset_structure
-			,path_origin=path_subsampled
-			,sample_size=sample_size
+			path_origin=path_experiment_data
+			,path_destination=path_fixed_window_dataset
+			,dataset_structure=config["dataset_structure"]
 			,list_window=list_window
-			,summarize=summarize
-			,path_destination= path_root.replace("custom","03_fixed_window_dataset")
-			
+			,event_basefile_therm=config["event_basefile_therm"]
+			,show_debug_message=show_debug_message
 		)
 
 		
@@ -199,10 +196,10 @@ def main(config):
 		list_classifier = config["list_classifier"]
 		k_fold_split = config["k_fold_split"]
 
-		if k_fold_split == 0: debug_code(message="Classification runnning: Train test split(80%-20%)",debug=debug)
-		else: debug_code(message=f"Classification running K-fold: {k_fold_split}",debug=debug)
+		if k_fold_split == 0: ut.debug(message="Classification runnning: Train test split(80%-20%)",show=show_debug_message)
+		else: ut.debug(message=f"Classification running K-fold: {k_fold_split}",show=show_debug_message)
 
-		debug_code(message="path_destination", var=path_result,debug=debug)
+		ut.debug(message="path_destination", var=path_result,show=show_debug_message)
 
 		cl.classify(
 			path_base=path_base
@@ -248,7 +245,7 @@ if __name__ == "__main__":
 		# 	list_window = config["list_window"]
 		# 	if len(list_window) < 0:
 		# 		sample_size = int(list_window[0][0] * list_window[0][1])
-		# 		print(new_window_size(total_sample_size=config["sample_size"]))
+		# 		print(wr.window_shape(total_sample_size=config["sample_size"]))
 		# 	else: print(list_window)
 				
 		# if int(input("Type 1 to start process: ")):

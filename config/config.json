@@ -8,12 +8,31 @@
 	,"y_event_value": 1
 	,"pre_processing_data": true
 	,"summarize": true
-	,"unique_value": true
+	,"unique_value": false
 	,"balanced_sample": true
 	,"classify": false
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"k_fold_split": 5
 	,"verbose": false
 	,"random_state": 42
-	,"debug": true
+	,"show_debug_message": true
+	,"sample_unique_length": {
+		"Cold after": 3648,
+		"Cold before": 3648,
+		"Low light after": 10971,
+		"Low light before":	10971,
+		"Manitol after": 33781,
+		"Manitol before": 33781
+	}
+	,"dataset_structure": {
+		"stimulus_stage": "category"
+		,"mean": "float64"
+		,"inter_quartile_range": "float64"
+		,"variance": "float64"
+		,"standard_deviation": "float64"
+		,"skew": "float64"
+		,"kustosis": "float64"
+		,"applied_stimulus": "int64"
+	}
+	,"event_basefile_therm": "before"
 }

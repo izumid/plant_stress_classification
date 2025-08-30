@@ -19,8 +19,12 @@ import sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-import md_logfile as lf
+import md_util as ut
 
+
+##########################################################
+## 						CLASSIFY						##
+##########################################################
 
 # MARK: Classify
 def classify(path_base,list_window,path_destination,list_classifier,random_state,verbose,k_fold_split,filename="result"):
@@ -154,4 +158,4 @@ def classify(path_base,list_window,path_destination,list_classifier,random_state
 			df = pd.DataFrame(result,columns=df.columns.tolist())
 			df.to_feather(os.path.join(path_destination,f"{filename}.feather"))
 	except Exception as error:
-		lf.log_file(filename="log_file",header_message="classify: plant stress")
+		ut.log_file(filename="log_file",header_message="classify: plant stress")
