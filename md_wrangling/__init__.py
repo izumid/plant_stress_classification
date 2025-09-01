@@ -29,7 +29,6 @@ def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
 	return(list_window)
 
 
-
 def window_approved(sample_class_size,window):
 	avoid_decimal = sample_class_size / window
 	avoid_remainder = sample_class_size % window
@@ -45,6 +44,7 @@ def window_approved(sample_class_size,window):
 
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
+
 
 def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
 	"""
@@ -131,7 +131,6 @@ def validated_window_size():
 	for w in window:
 		print(f"{w[0]}, {w[1]}")
 
-	
 #validated_window_size()
 
 
@@ -165,12 +164,17 @@ def find_min_sample_value():
 
 
 def imbalanced_window():
-	samples = [3648,10971,33871]
+	#samples = [3648,10971,33871] #0
+	#samples = [3600,10000,30000] #10
+	#samples = [3000,10000,30000] #11
+	samples = [3000,9000,30000] #25
+	#samples = [3600,9000,30000] #17
+	
 	work_all_sample_size = []
 
 	if 1==0:
 		for i in range(1,3648,1):
-			print(i)
+			#print(i)
 			aux = []
 			for s in samples:
 				x = window_approved(s,i)
@@ -182,19 +186,34 @@ def imbalanced_window():
 		for s in samples:
 			aux = []
 			for i in range(1,3648,1):
-				print(s, i)
+				#print(s, i)
 				window = window_approved(s,i)
 				if not window is None: aux.append(window)
+
 			work_all_sample_size.append((s,aux))
 			
 	
 	for sample_size in work_all_sample_size:
 		print(sample_size)
 
+	x = work_all_sample_size[0][1]
+	x.extend(work_all_sample_size[1][1])
+	x.extend(work_all_sample_size[2][1])
+	x.sort()
+
+	print("\r\nsorted:",x)
+
+	print("\r\nrepeated")
+	valid = []
+	n = 3
+	for item in set(x):  # Iterate through unique elements to avoid redundant checks
+		if x.count(item) == n: valid.append(int(item))
+
+	print(len(valid),valid)
+
+	
+
 imbalanced_window()
-		
-
-
 
 
 
