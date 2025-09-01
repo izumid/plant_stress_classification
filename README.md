@@ -1,9 +1,9 @@
 # Concepts
 - The maximum data lenght equals to each stimuli and stage - normal(0) and stressed(1) - is 5.240.000;
-- Each stimuli must collect data from original dataset, because volume of 5.240.000 limit collect 3648 observations of 2nd experiment; 
+- Each stimuli must collect data from original dataset. Limite volume of 5.240.000 to 1st experiment to each class unfeasible use 3648 observations to the 2nd/3th experiments; 
 - Fixed windows are based on MxN shape, where __M__ the is window size and __N__ samples ammount;
 - Given stimuli used are Cold (Cl), Low light (Lw) and Manitol Mn) a quimic agent to conduct the plant to osmotic stresse state;
-- A window of [10, 176] will have 10 window of each stimuli and stage, e.g 10 results in  $$Cl(10 \cdot 2) + Ll(10 \cdot 2) + Mn(10 \cdot 2) = Observations(60)$$
+- A window of [10, 176] will have 10 window of each stimuli and stage, e.g 10 results in 1st experiment will be:  $$Cl(10 \cdot 2) + Ll(10 \cdot 2) + Mn(10 \cdot 2) = Observations(60)$$ This behavior varies in the second experiment due to the introduction of an intentional imbalance.
 
 
 # Json Parameters
@@ -63,7 +63,7 @@
 
 
 ## Validated
-- [] 1st Experimento
-- [] 2nd Experimento
-- [] 3th Experimento
-- [] 4th Experimento
+- [x] 1st Experiment
+- [] 2nd Experiment
+- [x] 3th Experiment
+- [x] 4th Experiment

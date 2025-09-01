@@ -11,15 +11,183 @@ sys.path.append(parent_dir)
 import md_util as ut
 
 
+def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
+	list_window = []
+
+	for i in range(start, total_sample_size, step):
+		if total_sample_size % i == 0:
+			sample = (total_sample_size/i)
+			window = total_sample_size / sample
+			if window >= 10 and sample >=100: list_window.append([int(window),int(sample)])
+	
+	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
+	list_window = list_window + aux
+	list_window.sort(key=lambda x: x[0], reverse=reverse)
+
+	if debug:list_window = [min(list_window, key=lambda x: x[0])]
+	
+	return(list_window)
+
+
+
+def window_approved(sample_class_size,window):
+	avoid_decimal = sample_class_size / window
+	avoid_remainder = sample_class_size % window
+	
+	if 1 == 0:
+		missed = [524000,327500,262000,209600,163750,131000,104800,81875,65500]
+		if window in missed:
+			print(window, avoid_decimal,avoid_remainder)
+
+	if avoid_decimal > 0 and avoid_remainder == 0: 
+		window = (sample_class_size / window)
+		return(window)
+
+#print(window_check_valid(3648,114))
+#print(type(window_check_valid(96980,114)))
+
+def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
+	"""
+		Description:
+			if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
+				[Fixed Window Dataset] File Cold after.npy length(3647). Summarizing window[0:9698];
+		Arguments:
+		
+	"""
+
+	list_window = []
+
+	for i in range(start,sample_class_size,step):
+		window = window_approved(sample_class_size=sample_class_size,window=i)
+		
+		if not window is None:
+			window_sample = sample_class_size / window
+			if window >= 10 and window_sample >= 100: 
+				list_window.append([int(window),int(window_sample)])
+	
+	if 1 == 0:
+		for m,n in list_window:
+			print(f"m: {m}, n: {n}")
+
+	window_opposite_combination = [[n,m] for m,n in list_window if [n,m] not in list_window and not window_approved(sample_class_size,n) is None]
+	list_window = list_window + window_opposite_combination
+	list_window.sort(key=lambda x: x[0], reverse=reverse)
+
+	if 1 == 0:
+		if imbalanced:
+			check = []
+			#minimum_observation_length = min(sample_unique_length.values())
+			for window in list_window:
+
+				sample_length = window[1]
+						
+				if (minimum_observation_length / sample_length) < 0 or (minimum_observation_length % sample_length) != 0: check.append(True)
+				else: check.append(False)
+		
+			filtered = [val for val, flag in zip(list_window, check) if not flag]
+			list_window = filtered
+	else:
+		if imbalanced:
+			check = []
+			for window in list_window:
+				sample_length = window[1]
+				valid_window = window_approved(minimum_observation_length,sample_length)
+
+				if valid_window is None: check.append(True)
+				else: check.append(False)
+		
+			filtered = [val for val, flag in zip(list_window, check) if not flag]
+			list_window = filtered
+
+	if show_debug_message:list_window = [min(list_window, key=lambda x: x[0])]
+	
+	return(list_window)
+
+
+def validated_window_size():
+
+	sample_unique_length = {
+			"Cold after": 3648,
+			"Cold before": 3648,
+			"Low light after": 10971,
+			"Low light before":	10971,
+			"Manitol after": 33871,
+			"Manitol before": 33871
+	}
+	
+	sample_class_size = sum(sample_unique_length.values())
+	minimum_observation_length =  min(sample_unique_length.values())
+
+	#"if sample_class_size / i > 0 and sample_class_size % i == 0:" VS "if sample_class_size % i == 0:" #Seems no diference
+	
+	# -- old -- 
+	#window = new_window_size(total_sample_size=5240000,debug=False) 
+
+	# -- new -- 
+	#window = (window_shape(sample_class_size=5_240_000,show_debug_message=False)) 1st and 4th experiment
+	window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=False) #2nd experiment
+	#window = (window_shape(sample_class_size=21888,show_debug_message=False)) # 3th experiment
+	print(f"window total: {len(window)}")
+	for w in window:
+		print(f"{w[0]}, {w[1]}")
+
+	
+#validated_window_size()
+
+
+def find_min_sample_value():
+	sample_unique_length = {
+			"Cold after": 3648,
+			"Cold before": 3648,
+			"Low light after": 10971,
+			"Low light before":	10971,
+			"Manitol after": 33871,
+			"Manitol before": 33871
+	}
+	sample_class_size = sum(sample_unique_length.values())
+	minimum_observation_length =  min(sample_unique_length.values())
+	print(minimum_observation_length,"AAAA")
+
+	check = []
+	for i in range(0,3648,1):
+		print(i)
+		#window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=False)
+		window = window_shape(sample_class_size=96980,minimum_observation_length=i,imbalanced=True,show_debug_message=False)
+		if window != []: check.append((i,window))
+	
+
+	combination = sorted(check, key=lambda x: len(x[1]), reverse=True)
+
+	for combination in check:
+		print(combination)
+
+find_min_sample_value()
+
+
+
+def unique_total_value():
+	path_relative = r"data\00_stimulus_data_joined"
+	path_origin = os.path.join(os.getcwd(), path_relative)
+
+	for file in os.listdir(path_origin):
+		stimulus_data = np.load(os.path.join(path_origin,file))
+		stimulus_data = np.unique(stimulus_data)
+		print(f"File: {file}, unique: {len(stimulus_data)}")
+
+#unique_total_value()
+
+
 ##########################################################
 ## 						WRANGLING						##
 ##########################################################
 
+
 #MARK: Win. Shape
-def window_shape(total_sample_size,start=1,step=1,reverse=True,show_debug_message=False):
+def window_shape(total_sample_size,sample_unique_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
 	"""
 		Description:
-
+			if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
+				[Fixed Window Dataset] File Cold after.npy length(3647). Summarizing window[0:9698];
 		Arguments:
 		
 	"""
@@ -35,6 +203,15 @@ def window_shape(total_sample_size,start=1,step=1,reverse=True,show_debug_messag
 	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
 	list_window = list_window + aux
 	list_window.sort(key=lambda x: x[0], reverse=reverse)
+
+	if imbalanced:
+		minimum_observation_length = min(sample_unique_length.values())
+
+		for i in range(len(list_window)):
+			window = list_window[i] 
+			if (window[1] / minimum_observation_length) < 0 and (window[1] % minimum_observation_length) == 0:
+				list_window.remove(i)
+
 
 	if show_debug_message:list_window = [min(list_window, key=lambda x: x[0])]
 	
@@ -155,7 +332,7 @@ def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile
 					for index_start in (range(0,len(stimulus_value),n)):
 						index_end = index_start+n
 						window = np.array(stimulus_value[index_start:index_end])
-						ut.debug(message=f"[Fixed Window Dataset] Summarizing[{index_start}:{index_end}]",show=show_debug_message)
+						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
 
 						fix_window_data.append(
 							[

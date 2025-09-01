@@ -42,7 +42,6 @@ def read_config(path_absolute):
 		ut.log_file(filename="log_file",header_message="read_config")
 
 
-
 def result_feather_read(path_destination,filename,filter_model=False,dummy=False):
 	pd.set_option('display.max_columns', None)  # Display all columns
 	pd.set_option('display.max_rows', None)     # Display all rows
@@ -79,17 +78,19 @@ def main(config):
 	#wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
 	if unique_value:
-		list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
-		#sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-
 		if balanced_sample: 
+			unique_sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
+			list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
-		else: 				
-			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_unbalanced"))
-			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_unbalanced")
-			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_unbalanced")
+		else:
+			unique_sample_size = sum(sample_unique_length.values())
+			print(unique_sample_size,"AAAAAAAAAA")
+			list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
+			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
+			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 	else:
 		list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
 
