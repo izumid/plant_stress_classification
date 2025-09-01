@@ -228,6 +228,61 @@ def unique_total_value():
 
 #unique_total_value()
 
+#MARK: Win. Dataset
+def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+	"""
+		Description: 
+
+		Arguments:
+			x_column_name(string): ;
+			y_column_name(string): ;
+			path_origin(string): ;
+			path_parent_root(string): ;
+			sample_size(int): ;
+	"""
+
+	try:
+		if not os.path.exists(path_destination): 
+			os.makedirs(path_destination)
+
+			for m,n in list_window:
+				fix_window_data = []
+				file_name = f"{str(m)}x{str(n)}"				
+				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
+
+				for stimulus_file in os.listdir(path_origin):
+					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
+					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
+					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
+					
+					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+					else: stimulus_applied = 1
+
+					for index_start in (range(0,len(stimulus_value),n)):
+						index_end = index_start+n
+						window = np.array(stimulus_value[index_start:index_end])
+						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+
+						fix_window_data.append(
+							[
+								stimulus_stage
+								,np.mean(window)
+								,stats.iqr(window)
+								,np.var(window)
+								,np.std(window)
+								,stats.skew(window)
+								,stats.kurtosis(window)
+								,stimulus_applied
+							]
+						)
+
+				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
+				df.to_feather(os.path.join(path_destination,file_name+".feather"))
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
+
 
 ##########################################################
 ## 						WRANGLING						##
@@ -350,14 +405,12 @@ def experiment_data(path_destination,path_origin,sample_size,unique_value,balanc
 		ut.log_file(filename="log_file",header_message="Experiment Data")
 
 
-#MARK: Win. Dataset
-def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+#MARK: Split Window
+def window_fixed(path_destination,list_window,path_origin,show_debug_message,dataset_structure):
 	"""
 		Description: 
 
 		Arguments:
-			x_column_name(string): ;
-			y_column_name(string): ;
 			path_origin(string): ;
 			path_parent_root(string): ;
 			sample_size(int): ;
@@ -368,39 +421,71 @@ def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile
 			os.makedirs(path_destination)
 
 			for m,n in list_window:
-				fix_window_data = []
+				window_data = []
 				file_name = f"{str(m)}x{str(n)}"				
 				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
 				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
 
 				for stimulus_file in os.listdir(path_origin):
-					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
-					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
 					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
-					
-					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
-					else: stimulus_applied = 1
 
 					for index_start in (range(0,len(stimulus_value),n)):
 						index_end = index_start+n
-						window = np.array(stimulus_value[index_start:index_end])
-						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+						stimulus_data = np.array(stimulus_value[index_start:index_end])
+						ut.debug(message=f"[Fixed Window ] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
 
-						fix_window_data.append(
-							[
-								stimulus_stage
-								,np.mean(window)
-								,stats.iqr(window)
-								,np.var(window)
-								,np.std(window)
-								,stats.skew(window)
-								,stats.kurtosis(window)
-								,stimulus_applied
-							]
-						)
+						window_data.append(stimulus_data)
+
+				np.save(os.path.join(path_destination,f"{file_name}.npy"), window_data)
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
+
+
+
+#MARK: Summarize
+def summarize(path_destination,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+	"""
+		Description: 
+
+		Arguments:
+			path_origin(string): ;
+			path_parent_root(string): ;
+			sample_size(int): ;
+	"""
+
+	try:
+		if not os.path.exists(path_destination): 
+			os.makedirs(path_destination)
+
+			for window_file in os.listdir(path_origin):
+				fix_window_data = []
+				stimulus_stage = os.path.splitext(window_file)[0].replace(' ','_').lower()
+				stimulus_data = np.load(os.path.join(path_origin,window_file))
+				
+				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+				ut.debug(message=f"[Fixed Window Dataset] File: {window_file}",show=show_debug_message)
+
+				if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+				else: stimulus_applied = 1
+
+				for window in stimulus_data:
+					#ut.debug(message=f"[Fixed Window Dataset] File {window_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+
+					fix_window_data.append(
+						[
+							stimulus_stage
+							,np.mean(window)
+							,stats.iqr(window)
+							,np.var(window)
+							,np.std(window)
+							,stats.skew(window)
+							,stats.kurtosis(window)
+							,stimulus_applied
+						]
+					)
 
 				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
 				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
-				df.to_feather(os.path.join(path_destination,file_name+".feather"))
+				df.to_feather(os.path.join(path_destination,window_file+".feather"))
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
