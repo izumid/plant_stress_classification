@@ -161,7 +161,40 @@ def find_min_sample_value():
 	for combination in check:
 		print(combination)
 
-find_min_sample_value()
+#find_min_sample_value()
+
+
+def imbalanced_window():
+	samples = [3648,10971,33871]
+	work_all_sample_size = []
+
+	if 1==0:
+		for i in range(1,3648,1):
+			print(i)
+			aux = []
+			for s in samples:
+				x = window_approved(s,i)
+				if x is None: break
+				else: aux.append(x)
+
+			if len(aux) == 3: work_all_sample_size.append(aux)
+	else:
+		for s in samples:
+			aux = []
+			for i in range(1,3648,1):
+				print(s, i)
+				window = window_approved(s,i)
+				if not window is None: aux.append(window)
+			work_all_sample_size.append((s,aux))
+			
+	
+	for sample_size in work_all_sample_size:
+		print(sample_size)
+
+imbalanced_window()
+		
+
+
 
 
 
