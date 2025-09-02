@@ -62,7 +62,8 @@ def main(config):
 	path_subsampled = os.path.join(os.getcwd(),r"data\00_subsampled_data")
 	path_stimulus_data_joined = os.path.join(os.getcwd(),r"data\00_stimulus_data_joined")
 	path_experiment_data =  os.path.join(os.getcwd(),r"data\01_experiment_data")
-	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\02_fixed_window_dataset")	
+	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\02_fixed_window")	
+	path_fixed_window_summarized_dataset = os.path.join(os.getcwd(),r"data\03_summarized_dataset")	
 	
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
@@ -74,6 +75,7 @@ def main(config):
 	random_state = config["random_state"]
 	sample_unique_length = config["sample_unique_length"]
 	show_debug_message = config["show_debug_message"]
+	dataset_structure = config["dataset_structure"]
 
 	#wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
@@ -86,7 +88,6 @@ def main(config):
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
 		else:
 			unique_sample_size = sum(sample_unique_length.values())
-			print(unique_sample_size,"AAAAAAAAAA")
 			list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
@@ -164,16 +165,30 @@ def main(config):
 		)
 
 	
-		wr.fixed_window_dataset(
+		# wr.fixed_window_dataset(
+		# 	path_origin=path_experiment_data
+		# 	,path_destination=path_fixed_window_dataset
+		# 	,dataset_structure=config["dataset_structure"]
+		# 	,list_window=list_window
+		# 	,event_basefile_therm=config["event_basefile_therm"]
+		# 	,show_debug_message=show_debug_message
+		# )
+		wr.window_fixed(
 			path_origin=path_experiment_data
 			,path_destination=path_fixed_window_dataset
-			,dataset_structure=config["dataset_structure"]
 			,list_window=list_window
-			,event_basefile_therm=config["event_basefile_therm"]
+			,dataset_structure=dataset_structure
 			,show_debug_message=show_debug_message
 		)
-
 		
+
+		wr.summarize(
+			path_origin=path_fixed_window_dataset
+			,path_destination=path_fixed_window_summarized_dataset
+			,event_basefile_therm=config["event_basefile_therm"]
+			,dataset_structure=dataset_structure
+			,show_debug_message=show_debug_message
+		)
 		# rawdata(
 		# 	x_column_name=x_column_name
 		# 	,y_column_name=y_column_name

@@ -211,10 +211,7 @@ def imbalanced_window():
 
 	print(len(valid),valid)
 
-	
-
-imbalanced_window()
-
+#imbalanced_window()
 
 
 def unique_total_value():

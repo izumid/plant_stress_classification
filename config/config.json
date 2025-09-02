@@ -16,13 +16,21 @@
 	,"verbose": false
 	,"random_state": 42
 	,"show_debug_message": true
-	,"sample_unique_length": {
+	,"_sample_unique_length": {
 		"Cold after": 3648,
 		"Cold before": 3648,
 		"Low light after": 10971,
 		"Low light before":	10971,
 		"Manitol after": 33871,
 		"Manitol before": 33871
+	}
+	,"sample_unique_length": {
+		"Cold after": 3000,
+		"Cold before": 3000,
+		"Low light after": 9000,
+		"Low light before":	9000,
+		"Manitol after": 30000,
+		"Manitol before": 30000
 	}
 	,"dataset_structure": {
 		"stimulus_stage": "category"
