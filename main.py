@@ -54,7 +54,8 @@ def result_feather_read(path_destination,filename,filter_model=False,dummy=False
 
 
 # MARK: Main
-def main(config):
+def main():
+	config = read_config(os.path.join(os.getcwd(),"config/config.json"))
 	path_parent_root = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	path_original_data = os.path.join(os.path.dirname(os.getcwd()),"original_data")
 	#path_root = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem)
@@ -82,24 +83,30 @@ def main(config):
 	if unique_value:
 		if balanced_sample: 
 			unique_sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-			list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
 		else:
 			unique_sample_size = sum(sample_unique_length.values())
-			list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			minimum_observation_length =  min(sample_unique_length.values())
+			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			list_window = wr.window_shape(sample_class_size=unique_sample_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=show_debug_message)
+			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 	else:
-		list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
+		#list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
 
 		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicate\01_balanced"))
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
 		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicate\01_balanced")
 	
-	
+	if int(input("Type 1 to show windows list: ")):
+		print(list_window)
+		
 	
 	# path_base = path_root.replace("custom","03_windowing_new")
 	# #path_split = os.path.join(path_root,"04_split")
@@ -251,28 +258,18 @@ def mult_text_to_csv(path_origin,path_destination,all_has_title,filename):
 	df.to_csv(os.path.join(path_destination,f"{filename}.csv"),sep=';',quotechar='"',encoding="utf-8-sig")
 	df.to_feather(os.path.join(path_destination,f"{filename}.feather"))
 
+
+	# if int(input("Unify separated txt base files: ")):
+	# 	path_origin = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem,"05_result")
+	# 	path_destination = os.path.join(Path(path_origin).parent, "06_result_unified")
+	# 	if not os.path.exists(path_destination): os.makedirs(path_destination)
+	# 	mult_text_to_csv(path_origin=path_origin, path_destination=path_destination, all_has_title=True,filename=Path(os.path.realpath(__file__)).stem+"_stratified_kfold")
+
+
 if __name__ == "__main__":
 
 	try: 
-		config = read_config(os.path.join(os.getcwd(),"config/config.json"))
-		
-		# if int(input("Type 1 to show windows list: ")):
-
-		# 	list_window = config["list_window"]
-		# 	if len(list_window) < 0:
-		# 		sample_size = int(list_window[0][0] * list_window[0][1])
-		# 		print(wr.window_shape(total_sample_size=config["sample_size"]))
-		# 	else: print(list_window)
-				
-		# if int(input("Type 1 to start process: ")):
-		main(config)
-
-		# if int(input("Unify separated txt base files: ")):
-		# 	path_origin = os.path.join(os.getcwd(),"experiments_data",Path(os.path.realpath(__file__)).stem,"05_result")
-		# 	path_destination = os.path.join(Path(path_origin).parent, "06_result_unified")
-		# 	if not os.path.exists(path_destination): os.makedirs(path_destination)
-		# 	mult_text_to_csv(path_origin=path_origin, path_destination=path_destination, all_has_title=True,filename=Path(os.path.realpath(__file__)).stem+"_stratified_kfold")
-
+		main()
 	except Exception as e: 
 		print(f"An error occurred: {e}")
 
