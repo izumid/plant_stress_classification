@@ -15,7 +15,7 @@
 	,"k_fold_split": 5
 	,"verbose": false
 	,"random_state": 42
-	,"show_debug_message": true
+	,"show_debug_message": false
 	,"_sample_unique_length": {
 		"Cold after": 3648,
 		"Cold before": 3648,

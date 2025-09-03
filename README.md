@@ -4,6 +4,10 @@
 - Fixed windows are based on MxN shape, where __M__ the is window size and __N__ samples ammount;
 - Given stimuli used are Cold (Cl), Low light (Lw) and Manitol Mn) a quimic agent to conduct the plant to osmotic stresse state;
 - A window of [10, 176] will have 10 window of each stimuli and stage, e.g 10 results in 1st experiment will be:  $$Cl(10 \cdot 2) + Ll(10 \cdot 2) + Mn(10 \cdot 2) = Observations(60)$$ This behavior varies in the second experiment due to the introduction of an intentional imbalance.
+- To generate valid windows of imbalance experiments:
+	- window length / sample lenght = positive int;
+	- window length % sample lenght = 0;
+	- window samples length < min stimuli sample length;
 
 
 # Json Parameters

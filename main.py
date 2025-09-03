@@ -84,7 +84,6 @@ def main():
 		if balanced_sample: 
 			unique_sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
 			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
-			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
@@ -93,19 +92,17 @@ def main():
 			minimum_observation_length =  min(sample_unique_length.values())
 			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
 			list_window = wr.window_shape(sample_class_size=unique_sample_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=show_debug_message)
-			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 	else:
 		#list_window = wr.window_shape(total_sample_size=config["sample_size"],show_debug_message=show_debug_message)
-
 		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicate\01_balanced"))
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
 		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicate\01_balanced")
 	
-	if int(input("Type 1 to show windows list: ")):
-		print(list_window)
+	#if int(input("Type 1 to show windows list: ")):
+	print(f"\r\nwindows({len(list_window)}), data: {list_window}")
 		
 	
 	# path_base = path_root.replace("custom","03_windowing_new")

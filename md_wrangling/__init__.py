@@ -89,10 +89,10 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 		if imbalanced:
 			check = []
 			for window in list_window:
+				window_length = window[0]
 				sample_length = window[1]
-				valid_window = window_approved(minimum_observation_length,sample_length)
-
-				if valid_window is None: check.append(True)
+				valid_window = window_approved(minimum_observation_length,window_length)
+				if valid_window is None or sample_length >= minimum_observation_length: check.append(True)
 				else: check.append(False)
 		
 			filtered = [val for val, flag in zip(list_window, check) if not flag]
@@ -199,16 +199,15 @@ def imbalanced_window():
 	x.extend(work_all_sample_size[1][1])
 	x.extend(work_all_sample_size[2][1])
 	x.sort()
-
 	print("\r\nsorted:",x)
 
-	print("\r\nrepeated")
 	valid = []
 	n = 3
 	for item in set(x):  # Iterate through unique elements to avoid redundant checks
 		if x.count(item) == n: valid.append(int(item))
-
-	print(len(valid),valid)
+	
+	valid.sort(reverse=True)
+	print(f"\r\nvalid windows({len(valid)}), data: {valid}")
 
 imbalanced_window()
 
