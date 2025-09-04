@@ -36,14 +36,14 @@ def window_approved(sample_class_size,window_size,window_size_limit,window_sampl
 	if avoid_decimal > 0 and avoid_remainder == 0:
 		window_sample_size = (sample_class_size / window_size)
 
-		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit: 
+		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit:
 			# restrict of line up deals with the condition of and window_sample_size < sample_class_size
 			return([window_size,int(window_sample_size)])
 
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
 
-
+# MARK: Window
 def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
 	"""
 		Description:
@@ -54,25 +54,28 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 	"""
 
 	list_window = []
+	print("AAAAAAAAAAA", sample_class_size, minimum_observation_length)
 
-	for i in range(start,sample_class_size,step):
-		window = window_approved(sample_class_size=sample_class_size,window_size=i,window_size_limit=10,window_sample_size_limit=100)
-		list_window.append(window)
-
+	for window_size in range(start,sample_class_size,step):
+		window = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=10,window_sample_size_limit=100)
+		if not window is None: list_window.append(window)
 		# if not window is None:
 		# 	window_sample = sample_class_size / window
 		# 	if window >= 10 and window_sample >= 100: 
 		# 		list_window.append([int(window),int(window_sample)])
 	
-	if 1 == 0:
-		for m,n in list_window:
-			print(f"m: {m}, n: {n}")
+	#for m,n in list_window:
+	#	print(f"m: {m}, n: {n}")
 
-	window_opposite_combination = [[n,m] for m,n in list_window if [n,m] not in list_window and not window_approved(sample_class_size,n) is None]
+	#window_opposite_combination = [[n,m] for m,n in list_window if [n,m] not in list_window and not window_approved(sample_class_size,n) is None]
+	print("\r\nBBBBBBBBB", list_window)
+	window_opposite_combination = [[window[1],window[0]] for window in list_window if [window[1],window[0]] not in list_window]
 	list_window = list_window + window_opposite_combination
 	list_window.sort(key=lambda x: x[0], reverse=reverse)
+	print("\r\nCCCCCCCC", list_window)
 
-	if 1 == 0:
+	wissenschaft = 1
+	if wissenschaft == 0:
 		if imbalanced:
 			check = []
 			#minimum_observation_length = min(sample_unique_length.values())
@@ -84,7 +87,7 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 		
 			filtered = [val for val, flag in zip(list_window, check) if not flag]
 			list_window = filtered
-	else:
+	elif wissenschaft == 1:
 		if imbalanced:
 			check = []
 			for window in list_window:
@@ -97,8 +100,9 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 			filtered = [val for val, flag in zip(list_window, check) if not flag]
 			list_window = filtered
 
-	if show_debug_message:list_window = [min(list_window, key=lambda x: x[0])]
+	if show_debug_message: list_window = [min(list_window, key=lambda x: x[0])]
 	
+	print(list_window)
 	return(list_window)
 
 

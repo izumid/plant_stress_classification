@@ -25,12 +25,12 @@
 		"Manitol before": 33871
 	}
 	,"sample_unique_length": {
-		"Cold after": 3000,
-		"Cold before": 3000,
-		"Low light after": 9000,
-		"Low light before":	9000,
-		"Manitol after": 30000,
-		"Manitol before": 30000
+		"Cold after": 3600,
+		"Cold before": 3600,
+		"Low light after": 10800,
+		"Low light before":	10800,
+		"Manitol after": 32400,
+		"Manitol before": 32400
 	}
 	,"dataset_structure": {
 		"stimulus_stage": "category"
