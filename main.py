@@ -168,7 +168,6 @@ def main():
 			,show_debug_message=show_debug_message
 		)
 
-	
 		# wr.fixed_window_dataset(
 		# 	path_origin=path_experiment_data
 		# 	,path_destination=path_fixed_window_dataset
@@ -177,6 +176,7 @@ def main():
 		# 	,event_basefile_therm=config["event_basefile_therm"]
 		# 	,show_debug_message=show_debug_message
 		# )
+
 		wr.window_fixed(
 			path_origin=path_experiment_data
 			,path_destination=path_fixed_window_dataset

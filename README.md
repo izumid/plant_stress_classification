@@ -8,6 +8,8 @@
 	- window length / sample lenght = positive int;
 	- window length % sample lenght = 0;
 	- window samples length < min stimuli sample length;
+	- At least 100x samples per window;
+	- At least 10x windows in dataset;
 
 
 # Json Parameters

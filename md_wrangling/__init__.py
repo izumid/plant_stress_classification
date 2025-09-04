@@ -29,18 +29,16 @@ def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
 	return(list_window)
 
 
-def window_approved(sample_class_size,window):
-	avoid_decimal = sample_class_size / window
-	avoid_remainder = sample_class_size % window
-	
-	if 1 == 0:
-		missed = [524000,327500,262000,209600,163750,131000,104800,81875,65500]
-		if window in missed:
-			print(window, avoid_decimal,avoid_remainder)
+def window_approved(sample_class_size,window_size,window_size_limit,window_sample_size_limit):
+	avoid_decimal = sample_class_size / window_size
+	avoid_remainder = sample_class_size % window_size
 
-	if avoid_decimal > 0 and avoid_remainder == 0: 
-		window = (sample_class_size / window)
-		return(window)
+	if avoid_decimal > 0 and avoid_remainder == 0:
+		window_sample_size = (sample_class_size / window_size)
+
+		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit: 
+			# restrict of line up deals with the condition of and window_sample_size < sample_class_size
+			return([window_size,int(window_sample_size)])
 
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
@@ -58,12 +56,13 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 	list_window = []
 
 	for i in range(start,sample_class_size,step):
-		window = window_approved(sample_class_size=sample_class_size,window=i)
-		
-		if not window is None:
-			window_sample = sample_class_size / window
-			if window >= 10 and window_sample >= 100: 
-				list_window.append([int(window),int(window_sample)])
+		window = window_approved(sample_class_size=sample_class_size,window_size=i,window_size_limit=10,window_sample_size_limit=100)
+		list_window.append(window)
+
+		# if not window is None:
+		# 	window_sample = sample_class_size / window
+		# 	if window >= 10 and window_sample >= 100: 
+		# 		list_window.append([int(window),int(window_sample)])
 	
 	if 1 == 0:
 		for m,n in list_window:
@@ -89,9 +88,9 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 		if imbalanced:
 			check = []
 			for window in list_window:
-				window_length = window[0]
+				window_size = window[0]
 				sample_length = window[1]
-				valid_window = window_approved(minimum_observation_length,window_length)
+				valid_window = window_approved(minimum_observation_length,window_size,window_size_limit=10,window_sample_size_limit=100)
 				if valid_window is None or sample_length >= minimum_observation_length: check.append(True)
 				else: check.append(False)
 		
@@ -153,7 +152,6 @@ def find_min_sample_value():
 		window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=i,imbalanced=True,show_debug_message=False)
 		if window != []: check.append((i,window))
 	
-
 	combination = sorted(check, key=lambda x: len(x[1]), reverse=True)
 
 	for combination in check:
@@ -161,55 +159,49 @@ def find_min_sample_value():
 
 #find_min_sample_value()
 
-
-def imbalanced_window():
+#MARK: Imbalance Search
+def imbalanced_window_search():
 	#samples = [3648,10971,33871] #0
-	#samples = [3600,10000,30000] #10
-	#samples = [3000,10000,30000] #11
-	samples = [3000,9000,30000] #25
-	#samples = [3600,9000,30000] #17
+	#samples = [3600,10000,30000] #4
+	#samples = [3000,10000,30000] #3
+	#samples = [3000,9000,30000] #7
+	#samples = [3600,9000,30000] #7
+	#samples = [3600,9600,28800] #8
+	#samples = [3600,10800,32400] #10
+	samples = [3600,9000,28800] #9
 	
 	work_all_sample_size = []
 
-	if 1==0:
-		for i in range(1,3648,1):
-			#print(i)
-			aux = []
-			for s in samples:
-				x = window_approved(s,i)
-				if x is None: break
-				else: aux.append(x)
+	for s in samples:
+		aux = []
+		for i in range(1,min(samples),1):
+			#print(s, i)
+			window = window_approved(s,i,window_size_limit=10,window_sample_size_limit=100)
+			if not window is None: aux.append(window)
 
-			if len(aux) == 3: work_all_sample_size.append(aux)
-	else:
-		for s in samples:
-			aux = []
-			for i in range(1,min(samples),1):
-				#print(s, i)
-				window = window_approved(s,i)
-				if not window is None: aux.append(window)
-
-			work_all_sample_size.append((s,aux))
+		work_all_sample_size.append((s,aux))
 			
 	
 	for sample_size in work_all_sample_size:
 		print(sample_size)
 
-	x = work_all_sample_size[0][1]
-	x.extend(work_all_sample_size[1][1])
-	x.extend(work_all_sample_size[2][1])
-	x.sort()
-	print("\r\nsorted:",x)
+	window_each_sample_size = work_all_sample_size[0][1]
+	window_each_sample_size.extend(work_all_sample_size[1][1])
+	window_each_sample_size.extend(work_all_sample_size[2][1])
+	window_each_sample_size.sort(reverse=True)
+
+	window_size = [window[0] for window in window_each_sample_size]
+	#print("\r\nsorted:",x)
 
 	valid = []
 	n = 3
-	for item in set(x):  # Iterate through unique elements to avoid redundant checks
-		if x.count(item) == n: valid.append(int(item))
+	for item in set(window_size):  # Iterate through unique elements to avoid redundant checks
+		if window_size.count(item) == n: valid.append(int(item))
 	
 	valid.sort(reverse=True)
 	print(f"\r\nvalid windows({len(valid)}), data: {valid}")
 
-imbalanced_window()
+#imbalanced_window_search() 
 
 
 def unique_total_value():
