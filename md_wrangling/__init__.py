@@ -59,37 +59,56 @@ def window_shape(sample_class_size,sample_unique_length=None,start=1,step=1,reve
 			window = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=10,window_sample_size_limit=100)
 			if not window is None: list_window.append(window)
 	else:
-		work_all_sample_size = []
+		stimuli_window_indiviual = []
 		unique_sample_value = list(set(sample_unique_length.values()))
 		max_window_size = min(unique_sample_value)
 
-		for class_sample_size in unique_sample_value:
-			aux = []
+		for stimulus_sample_size in unique_sample_value:
+			sample_size = []
 			for window_size_test in range(1,max_window_size,1):
-				window = window_approved(sample_class_size=class_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=100)
-				if not window is None: aux.append(window)
-			print(aux)
-			work_all_sample_size.append((class_sample_size,aux))
-				
-		for sample_size in work_all_sample_size:
-			print(sample_size)
+				sample_size_possible = window_approved(sample_class_size=stimulus_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=100)
+				if not sample_size_possible is None: sample_size.append(sample_size_possible)
+			stimuli_window_indiviual.append((stimulus_sample_size,sample_size))
+		
 
-		window_each_sample_size = work_all_sample_size[0][1]
-		window_each_sample_size.extend(work_all_sample_size[1][1])
-		window_each_sample_size.extend(work_all_sample_size[2][1])
+		#test = [stimuli_window_indiviual[i][1] for i in range(len(stimuli_window_indiviual))]
+		#test.sort(reverse=True)
+
+		window_each_sample_size = stimuli_window_indiviual[0][1]
+		window_each_sample_size.extend(stimuli_window_indiviual[1][1])
+		window_each_sample_size.extend(stimuli_window_indiviual[2][1])
 		window_each_sample_size.sort(reverse=True)
 
-		window_size = [window[0] for window in window_each_sample_size]
+		#print(window_each_sample_size,"\r\n\r\n",test)
+
+		#window[1] = sample, considering it to each window have the same size, avoiding bias summarizing large data in on stimulus and less in others
+		window_sample_size = [window[1] for window in window_each_sample_size]
 		#print("\r\nsorted:",x)
 
-		valid = []
-		n = 3
-		for item in set(window_size):  # Iterate through unique elements to avoid redundant checks
-			if window_size.count(item) == n: valid.append(int(item))
+	
+		stimulus_class_diferent = len(stimuli_window_indiviual)
+		#n = 3
+		#for item in set(window_sample_size):  # Iterate through unique elements to avoid redundant checks
+		#	if window_sample_size.count(item) == n: valid.append(int(item))
+		#valid.sort(reverse=True)
+		#print(f"\r\nvalid sample size({len(valid)}), data: {valid}")
 		
-		valid.sort(reverse=True)
-		print(f"\r\nvalid windows({len(valid)}), data: {valid}")
-		return(valid)
+		sample_size_valid = [item for item in set(window_sample_size) if window_sample_size.count(item) == stimulus_class_diferent]
+		sample_size_valid.sort(reverse=True)
+		#print(f"\r\nvali2 sample size({len(valid2)}), data: {valid2}")
+	
+
+		stimulus_window_imbalanced = {}
+		for stimuli_sample in unique_sample_value:
+			stimuli_window = [[stimuli_sample/sample_size,sample_size] for sample_size in sample_size_valid]
+			#stimuli_window = [stimuli_sample/sample_size for sample_size in sample_size_valid]
+			stimuli_window.sort(reverse=True)
+			stimulus_window_imbalanced[stimuli_sample] = stimuli_window
+			
+		
+		return(stimulus_window_imbalanced)
+	
+
 		if show_debug_message: list_window = [min(list_window, key=lambda x: x[0])]
 	
 
