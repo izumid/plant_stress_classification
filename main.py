@@ -92,7 +92,7 @@ def main():
 			minimum_observation_length =  min(sample_unique_length.values())
 			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
 			print(0)
-			list_window = wr.window_shape(sample_class_size=unique_sample_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=show_debug_message)
+			list_window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=sample_unique_length,balanced=False,show_debug_message=show_debug_message)
 			print(1)
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")

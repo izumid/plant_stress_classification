@@ -37,14 +37,13 @@ def window_approved(sample_class_size,window_size,window_size_limit,window_sampl
 		window_sample_size = (sample_class_size / window_size)
 
 		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit:
-			# restrict of line up deals with the condition of and window_sample_size < sample_class_size
 			return([window_size,int(window_sample_size)])
 
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
 
 # MARK: Window
-def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
+def window_shape(sample_class_size,sample_unique_length=None,start=1,step=1,reverse=True,balanced=True,show_debug_message=False):
 	"""
 		Description:
 			if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
@@ -54,18 +53,45 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 	"""
 
 	list_window = []
-	print("AAAAAAAAAAA", sample_class_size, minimum_observation_length)
 
-	for window_size in range(start,sample_class_size,step):
-		window = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=10,window_sample_size_limit=100)
-		if not window is None: list_window.append(window)
-		# if not window is None:
-		# 	window_sample = sample_class_size / window
-		# 	if window >= 10 and window_sample >= 100: 
-		# 		list_window.append([int(window),int(window_sample)])
+	if balanced:
+		for window_size in range(start,sample_class_size,step):
+			window = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=10,window_sample_size_limit=100)
+			if not window is None: list_window.append(window)
+	else:
+		work_all_sample_size = []
+		unique_sample_value = list(set(sample_unique_length.values()))
+		max_window_size = min(unique_sample_value)
+
+		for class_sample_size in unique_sample_value:
+			aux = []
+			for window_size_test in range(1,max_window_size,1):
+				window = window_approved(sample_class_size=class_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=100)
+				if not window is None: aux.append(window)
+			print(aux)
+			work_all_sample_size.append((class_sample_size,aux))
+				
+		for sample_size in work_all_sample_size:
+			print(sample_size)
+
+		window_each_sample_size = work_all_sample_size[0][1]
+		window_each_sample_size.extend(work_all_sample_size[1][1])
+		window_each_sample_size.extend(work_all_sample_size[2][1])
+		window_each_sample_size.sort(reverse=True)
+
+		window_size = [window[0] for window in window_each_sample_size]
+		#print("\r\nsorted:",x)
+
+		valid = []
+		n = 3
+		for item in set(window_size):  # Iterate through unique elements to avoid redundant checks
+			if window_size.count(item) == n: valid.append(int(item))
+		
+		valid.sort(reverse=True)
+		print(f"\r\nvalid windows({len(valid)}), data: {valid}")
+		return(valid)
+		if show_debug_message: list_window = [min(list_window, key=lambda x: x[0])]
 	
-	#for m,n in list_window:
-	#	print(f"m: {m}, n: {n}")
 
 	#window_opposite_combination = [[n,m] for m,n in list_window if [n,m] not in list_window and not window_approved(sample_class_size,n) is None]
 	print("\r\nBBBBBBBBB", list_window)
@@ -74,34 +100,6 @@ def window_shape(sample_class_size,minimum_observation_length=None,start=1,step=
 	list_window.sort(key=lambda x: x[0], reverse=reverse)
 	print("\r\nCCCCCCCC", list_window)
 
-	wissenschaft = 1
-	if wissenschaft == 0:
-		if imbalanced:
-			check = []
-			#minimum_observation_length = min(sample_unique_length.values())
-			for window in list_window:
-				sample_length = window[1]
-						
-				if (minimum_observation_length / sample_length) < 0 or (minimum_observation_length % sample_length) != 0: check.append(True)
-				else: check.append(False)
-		
-			filtered = [val for val, flag in zip(list_window, check) if not flag]
-			list_window = filtered
-	elif wissenschaft == 1:
-		if imbalanced:
-			check = []
-			for window in list_window:
-				window_size = window[0]
-				sample_length = window[1]
-				valid_window = window_approved(minimum_observation_length,window_size,window_size_limit=10,window_sample_size_limit=100)
-				if valid_window is None or sample_length >= minimum_observation_length: check.append(True)
-				else: check.append(False)
-		
-			filtered = [val for val, flag in zip(list_window, check) if not flag]
-			list_window = filtered
-
-	if show_debug_message: list_window = [min(list_window, key=lambda x: x[0])]
-	
 	print(list_window)
 	return(list_window)
 
