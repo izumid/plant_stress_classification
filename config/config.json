@@ -6,7 +6,7 @@
 	,"x_size_category": 3
 	,"y_size_class": 2
 	,"y_event_value": 1
-	,"pre_processing_data": false
+	,"pre_processing_data": true
 	,"summarize": true
 	,"unique_value": false
 	,"balanced_sample": false

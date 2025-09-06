@@ -11,43 +11,38 @@ sys.path.append(parent_dir)
 import md_util as ut
 
 
-def new_window_size(total_sample_size,start=1,step=1,reverse=True,debug=False):
-	list_window = []
-
-	for i in range(start, total_sample_size, step):
-		if total_sample_size % i == 0:
-			sample = (total_sample_size/i)
-			window = total_sample_size / sample
-			if window >= 10 and sample >=100: list_window.append([int(window),int(sample)])
-	
-	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
-	list_window = list_window + aux
-	list_window.sort(key=lambda x: x[0], reverse=reverse)
-
-	if debug:list_window = [min(list_window, key=lambda x: x[0])]
-	
-	return(list_window)
-
-
 def window_approved(sample_class_size,window_size,window_size_limit,window_sample_size_limit):
 	avoid_decimal = sample_class_size / window_size
 	avoid_remainder = sample_class_size % window_size
 
-	if avoid_decimal > 0 and avoid_remainder == 0:
+	if avoid_decimal > 0 and avoid_remainder == 0: 
 		window_sample_size = (sample_class_size / window_size)
 
-		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit:
-			return([window_size,int(window_sample_size)])
+		if window_size >= window_size_limit and window_sample_size >= window_sample_size_limit and window_size.is_integer() and window_sample_size.is_integer():
+			return([int(window_size),int(window_sample_size)])
+		
 
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
 
 # MARK: Window
-def window_shape(sample_class_size,sample_unique_length=None,start=1,step=1,reverse=True,balanced=True,show_debug_message=False):
+def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sample_size_limit=10,reverse=True,sample_unique_length=None,balanced=True,show_debug_message=False):
 	"""
 		Description:
-			if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
-				[Fixed Window Dataset] File Cold after.npy length(3647). Summarizing window[0:9698];
+
+		Arguments:
+			sample_class_size(int): ;
+			start=(int): ;
+			step=(int): ;
+			window_size_limit(int): ;
+			window_sample_size_limit(int): ;
+			reverse(bool): ;
+			sample_unique_length(int): ;
+			balanced(bool): ;
+			show_debug_message(bool): ;
+
+		Note: if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
+			[Fixed Window Dataset] File Cold after.npy length(3647). Summarizing window[0:9698];
 		Arguments:
 		
 	"""
@@ -55,11 +50,14 @@ def window_shape(sample_class_size,sample_unique_length=None,start=1,step=1,reve
 		stimulus_window={}
 		window = []
 		for window_size in range(start,sample_class_size,step):
-			window_size_possible = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=10,window_sample_size_limit=100)
+			window_size_possible = window_approved(sample_class_size=sample_class_size,window_size=window_size,window_size_limit=window_size_limit,window_sample_size_limit=window_sample_size_limit)
 			if not window_size_possible is None: window.append(window_size_possible)
+
+		window.sort(key=lambda x: x[0], reverse=reverse)
 		
 		if show_debug_message: window = [min(window, key=lambda x: x[0])]
 		stimulus_window[sample_class_size] = window
+
 	else:
 		stimulus_window_indiviual = []
 		unique_sample_value = list(set(sample_unique_length.values()))
@@ -68,115 +66,37 @@ def window_shape(sample_class_size,sample_unique_length=None,start=1,step=1,reve
 		for stimulus_sample_size in unique_sample_value:
 			sample_size = []
 			for window_size_test in range(1,max_window_size,1):
-				sample_size_possible = window_approved(sample_class_size=stimulus_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=100)
+				sample_size_possible = window_approved(sample_class_size=stimulus_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=10)
 				if not sample_size_possible is None: sample_size.append(sample_size_possible)
 			stimulus_window_indiviual.append((stimulus_sample_size,sample_size))
-		
 
-		#test = [stimulus_window_indiviual[i][1] for i in range(len(stimulus_window_indiviual))]
-		#test.sort(reverse=True)
-
-		window_each_sample_size = stimulus_window_indiviual[0][1]
-		window_each_sample_size.extend(stimulus_window_indiviual[1][1])
-		window_each_sample_size.extend(stimulus_window_indiviual[2][1])
-		window_each_sample_size.sort(reverse=True)
-
-		#print(window_each_sample_size,"\r\n\r\n",test)
+		window_each_sample_size = [item for sublist in stimulus_window_indiviual for item in sublist[1]]
+		#window_each_sample_size.sort(reverse=True)
+		#print("\r\nwindow_each_sample_size",len(window_each_sample_size), window_each_sample_size)
 
 		#window[1] = sample, considering it to each window have the same size, avoiding bias summarizing large data in on stimulus and less in others
 		window_sample_size = [window[1] for window in window_each_sample_size]
-		#print("\r\nsorted:",x)
-
-	
 		stimulus_class_diferent = len(stimulus_window_indiviual)
-		#n = 3
-		#for item in set(window_sample_size):  # Iterate through unique elements to avoid redundant checks
-		#	if window_sample_size.count(item) == n: valid.append(int(item))
-		#valid.sort(reverse=True)
-		#print(f"\r\nvalid sample size({len(valid)}), data: {valid}")
-		
 		sample_size_valid = [item for item in set(window_sample_size) if window_sample_size.count(item) == stimulus_class_diferent]
+
 		sample_size_valid.sort(reverse=True)
-		#print(f"\r\nvali2 sample size({len(valid2)}), data: {valid2}")
-	
+			
 		stimulus_window = {}
 		for stimulus_sample in unique_sample_value:
-			#stimuli_sample/sample_size = window size
-			window = [[stimulus_sample/sample_size,sample_size] for sample_size in sample_size_valid]
+			#window size = stimuli_sample/sample_size
+			#window = [[stimulus_sample/sample_size,sample_size] 
+			window = []
+			for sample_size in sample_size_valid: 
+				sample_window_size  = stimulus_sample / sample_size
+				if sample_window_size.is_integer(): window.append([int(sample_window_size),sample_size])
+
 			if show_debug_message: window = [min(window, key=lambda x: x[0])]
 
 			window.sort(reverse=True)
 			stimulus_window[stimulus_sample] = window
-			
+
 	return(stimulus_window)
-	
-	#window_opposite_combination = [[n,m] for m,n in list_window if [n,m] not in list_window and not window_approved(sample_class_size,n) is None]
-	print("\r\nBBBBBBBBB", list_window)
-	window_opposite_combination = [[window[1],window[0]] for window in list_window if [window[1],window[0]] not in list_window]
-	list_window = list_window + window_opposite_combination
-	list_window.sort(key=lambda x: x[0], reverse=reverse)
-	print("\r\nCCCCCCCC", list_window)
 
-	print(list_window)
-	return(list_window)
-
-
-def validated_window_size():
-
-	sample_unique_length = {
-		"Cold after": 3648,
-		"Cold before": 3648,
-		"Low light after": 10971,
-		"Low light before":	10971,
-		"Manitol after": 33871,
-		"Manitol before": 33871
-	}
-	
-	sample_class_size = sum(sample_unique_length.values())
-	minimum_observation_length =  min(sample_unique_length.values())
-
-	#"if sample_class_size / i > 0 and sample_class_size % i == 0:" VS "if sample_class_size % i == 0:" #Seems no diference
-	
-	# -- old -- 
-	#window = new_window_size(total_sample_size=5240000,debug=False) 
-
-	# -- new -- 
-	#window = (window_shape(sample_class_size=5_240_000,show_debug_message=False)) 1st and 4th experiment
-	window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=False) #2nd experiment
-	#window = (window_shape(sample_class_size=21888,show_debug_message=False)) # 3th experiment
-	print(f"window total: {len(window)}")
-	for w in window:
-		print(f"{w[0]}, {w[1]}")
-
-#validated_window_size()
-
-
-def find_min_sample_value():
-	sample_unique_length = {
-			"Cold after": 3648,
-			"Cold before": 3648,
-			"Low light after": 10971,
-			"Low light before":	10971,
-			"Manitol after": 33871,
-			"Manitol before": 33871
-	}
-	sample_class_size = sum(sample_unique_length.values())
-	minimum_observation_length =  min(sample_unique_length.values())
-	print(minimum_observation_length,"AAAA")
-
-	check = []
-	for i in range(0,minimum_observation_length,1):
-		print(i)
-		#window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=minimum_observation_length,imbalanced=True,show_debug_message=False)
-		window = window_shape(sample_class_size=sample_class_size,minimum_observation_length=i,imbalanced=True,show_debug_message=False)
-		if window != []: check.append((i,window))
-	
-	combination = sorted(check, key=lambda x: len(x[1]), reverse=True)
-
-	for combination in check:
-		print(combination)
-
-#find_min_sample_value()
 
 #MARK: Imbalance Search
 def imbalanced_window_search():
@@ -234,8 +154,9 @@ def unique_total_value():
 
 #unique_total_value()
 
+
 #MARK: Win. Dataset
-def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+'''def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
 		Description: 
 
@@ -287,49 +208,72 @@ def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile
 				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
 				df.to_feather(os.path.join(path_destination,file_name+".feather"))
 	except Exception as error:
+		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")'''
+
+
+def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+	"""
+		Description: 
+
+		Arguments:
+			x_column_name(string): ;
+			y_column_name(string): ;
+			path_origin(string): ;
+			path_parent_root(string): ;
+			sample_size(int): ;
+	"""
+
+	try:
+		if not os.path.exists(path_destination_windowed): os.makedirs(path_destination_windowed)
+		if not os.path.exists(path_destination_summarized_window): os.makedirs(path_destination_summarized_window)
+		
+		for value in window.values():
+			for w in value:
+				window_size = w[0]
+				window_sample_size = w[1]
+				fixed_window_data = []
+				summarized_data = []
+				file_name = f"{str(window_size)}x{str(window_sample_size)}"				
+				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
+
+				for stimulus_file in os.listdir(path_origin):
+					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
+					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
+					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
+					
+					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+					else: stimulus_applied = 1
+
+					for index_start in (range(0,len(stimulus_value),window_sample_size)):
+						index_end = index_start + window_sample_size
+						window = np.array(stimulus_value[index_start:index_end])
+						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+						fixed_window_data.append(window)
+						summarized_data.append(
+							[
+								stimulus_stage
+								,np.mean(window)
+								,stats.iqr(window)
+								,np.var(window)
+								,np.std(window)
+								,stats.skew(window)
+								,stats.kurtosis(window)
+								,stimulus_applied
+							]
+						)
+
+				np.save(os.path.join(path_destination_windowed,f"{file_name}.npy"),fixed_window_data)
+				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+				df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
+				df.to_feather(os.path.join(path_destination_summarized_window,f"{file_name}.feather"))
+	except Exception as error:
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 
 
 ##########################################################
 ## 						WRANGLING						##
 ##########################################################
-
-
-#MARK: Win. Shape
-'''def window_shape(total_sample_size,sample_unique_length=None,start=1,step=1,reverse=True,imbalanced=False,show_debug_message=False):
-	"""
-		Description:
-			if experiment is unbalanced must guarantee that always get the same number of observations to each windows, avoinding this: 
-				[Fixed Window Dataset] File Cold after.npy length(3647). Summarizing window[0:9698];
-		Arguments:
-		
-	"""
-
-	list_window = []
-
-	for i in range(start, total_sample_size, step):
-		if total_sample_size % i ==0:
-			sample = (total_sample_size/i)
-			window = total_sample_size / sample
-			if window >= 10 and sample >=100: list_window.append([int(window),int(sample)])
-	
-	aux = [[y,x] for x,y in list_window if [y,x] not in list_window]
-	list_window = list_window + aux
-	list_window.sort(key=lambda x: x[0], reverse=reverse)
-
-	if imbalanced:
-		minimum_observation_length = min(sample_unique_length.values())
-
-		for i in range(len(list_window)):
-			window = list_window[i] 
-			if (window[1] / minimum_observation_length) < 0 and (window[1] % minimum_observation_length) == 0:
-				list_window.remove(i)
-
-
-	if show_debug_message:list_window = [min(list_window, key=lambda x: x[0])]
-	
-	return(list_window)'''
-
 
 #MARK: Join Data
 def join_stimulus_data(random_state,path_destination,path_origin,show_debug_message):
@@ -385,34 +329,32 @@ def experiment_data(path_destination,path_origin,sample_size,unique_value,balanc
 	# np.random.seed(random_state) 
 
 	try:
-		if not os.path.exists(path_destination):
-			os.makedirs(path_destination)
+		if not os.path.exists(path_destination): os.makedirs(path_destination)
 
-			for file in os.listdir(path_origin):
-				stimulus_data = np.load(os.path.join(path_origin,file))
-				#stimulus_data_size = len(stimulus_data)
+		for file in os.listdir(path_origin):
+			stimulus_data = np.load(os.path.join(path_origin,file))
+			#stimulus_data_size = len(stimulus_data)
 
-				if unique_value: 
-					stimulus_data = np.unique(stimulus_data)
-					if balanced_sample: sample_size = sample_unique_length["Cold after"]
-					else: sample_size = sample_unique_length[Path(file).stem]
-				
-				ut.debug(message=f"[Experiment Data] File: {file}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
-				stimulus_data = stimulus_data[:(sample_size-1)] # As we dealing the indexes -1, don't do that if was lenght
-				
-				#if stimulus_data_size >= sample_size: 
-					#stimulus_data = np.random.choice(stimulus_data,size=sample_size,replace=False) 
-				#else: stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
+			if unique_value: 
+				stimulus_data = np.unique(stimulus_data)
+				if balanced_sample: sample_size = sample_unique_length["Cold after"]
+				else: sample_size = sample_unique_length[Path(file).stem]
+			
+			ut.debug(message=f"[Experiment Data] File: {file}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
+			stimulus_data = stimulus_data[:(sample_size)]
+			
+			#if stimulus_data_size >= sample_size: 
+				#stimulus_data = np.random.choice(stimulus_data,size=sample_size,replace=False) 
+			#else: stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
 
-				
-				np.save(os.path.join(path_destination,file), stimulus_data)
-
+			
+			np.save(os.path.join(path_destination,file), stimulus_data)
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="Experiment Data")
 
 
 #MARK: Split Window
-def window_fixed(path_destination,list_window,path_origin,show_debug_message,dataset_structure):
+def window_fixed(path_destination,window,path_origin,show_debug_message,dataset_structure):
 	"""
 		Description: 
 
@@ -423,21 +365,27 @@ def window_fixed(path_destination,list_window,path_origin,show_debug_message,dat
 	"""
 
 	try:
-		if not os.path.exists(path_destination): 
-			os.makedirs(path_destination)
+		if not os.path.exists(path_destination): os.makedirs(path_destination)
+			
+		for value in window.values():
+			for w in value:
+				window_size = w[0]
+				window_sample_size = w[1]
 
-			for m,n in list_window:
 				window_data = []
-				file_name = f"{str(m)}x{str(n)}"				
+				file_name = f"{str(window_size)}x{str(window_sample_size)}"				
 				ut.debug(message=f"[Window Fixed] data origin: {path_origin}",show=show_debug_message)
 				ut.debug(message=f"[Window Fixed] file: {file_name}",show=show_debug_message)
 
 				for stimulus_file in os.listdir(path_origin):
+					if "after" in stimulus_file: stimulus_applied = 0
+					else: stimulus_applied = 1
 					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
 
-					for index_start in (range(0,len(stimulus_value),n)):
-						index_end = index_start+n
-						stimulus_data = np.array(stimulus_value[index_start:index_end])
+					for index_start in (range(0,len(stimulus_value),window_sample_size)):
+						index_end = index_start + window_sample_size
+						stimulus_data = [stimulus_value[index_start:index_end],stimulus_applied]
+						print(stimulus_data)
 						ut.debug(message=f"[Window Fixed] file {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]. Window length({len(stimulus_data)})",show=show_debug_message)
 
 						window_data.append(stimulus_data)
@@ -460,38 +408,37 @@ def summarize(path_destination,path_origin,event_basefile_therm,show_debug_messa
 	"""
 
 	try:
-		if not os.path.exists(path_destination): 
-			os.makedirs(path_destination)
+		if not os.path.exists(path_destination):  os.makedirs(path_destination)
 
-			for window_file in os.listdir(path_origin):
-				fix_window_data = []
-				stimulus_stage = os.path.splitext(window_file)[0].replace(' ','_').lower()
-				stimulus_data = np.load(os.path.join(path_origin,window_file))
-				
-				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
-				ut.debug(message=f"[Fixed Window Dataset] File: {window_file}",show=show_debug_message)
+		for window_file in os.listdir(path_origin):
+			fix_window_data = []
+			stimulus_stage = os.path.splitext(window_file)[0].replace(' ','_').lower()
+			stimulus_data = np.load(os.path.join(path_origin,window_file))
+			
+			ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+			ut.debug(message=f"[Fixed Window Dataset] File: {window_file}",show=show_debug_message)
 
-				if event_basefile_therm in stimulus_stage: stimulus_applied = 0
-				else: stimulus_applied = 1
+			if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+			else: stimulus_applied = 1
 
-				for window in stimulus_data:
-					#ut.debug(message=f"[Fixed Window Dataset] File {window_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+			for window in stimulus_data:
+				#ut.debug(message=f"[Fixed Window Dataset] File {window_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
 
-					fix_window_data.append(
-						[
-							stimulus_stage
-							,np.mean(window)
-							,stats.iqr(window)
-							,np.var(window)
-							,np.std(window)
-							,stats.skew(window)
-							,stats.kurtosis(window)
-							,stimulus_applied
-						]
-					)
+				fix_window_data.append(
+					[
+						stimulus_stage
+						,np.mean(window)
+						,stats.iqr(window)
+						,np.var(window)
+						,np.std(window)
+						,stats.skew(window)
+						,stats.kurtosis(window)
+						,stimulus_applied
+					]
+				)
 
-				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
-				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
-				df.to_feather(os.path.join(path_destination,window_file+".feather"))
+			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+			df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
+			df.to_feather(os.path.join(path_destination,Path(window_file).stem+".feather"))
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="summarize: read each file of 2D arrays, summarize then and generate a dataset")

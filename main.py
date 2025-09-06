@@ -65,7 +65,8 @@ def main():
 	path_experiment_data =  os.path.join(os.getcwd(),r"data\01_experiment_data")
 	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\02_fixed_window")	
 	path_fixed_window_summarized_dataset = os.path.join(os.getcwd(),r"data\03_summarized_dataset")	
-	
+	path_result = os.path.join(os.getcwd(),r"data\04_experiment_result")
+
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
 	summarize = config["summarize"]
@@ -81,30 +82,41 @@ def main():
 	#wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
 	if unique_value:
-		if balanced_sample: 
+		if balanced_sample:
+			print("3th Experiment")
 			unique_sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			#window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
 			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
+			path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"02_value_unique\01_balanced")
+			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
 		else:
+			print("2st Experiment")
 			unique_sample_size = sum(sample_unique_length.values())
 			minimum_observation_length =  min(sample_unique_length.values())
 			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
-			list_window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=sample_unique_length,balanced=False,show_debug_message=show_debug_message)
+			window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=sample_unique_length,balanced=False,show_debug_message=show_debug_message)
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
+			path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"02_value_unique\02_imbalanced")
+			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 	else:
-		list_window = wr.window_shape(sample_class_size=config["sample_size"],show_debug_message=show_debug_message)
-		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicate\01_balanced"))
+		print("1st Experiment")
+		window = wr.window_shape(sample_class_size=config["sample_size"],show_debug_message=show_debug_message)
+		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicated\01_balanced"))
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
-		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicate\01_balanced")
+		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
+		path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"01_value_duplicated\01_balanced")
+		path_result = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
 	
 	#if int(input("Type 1 to show windows list: ")):
-	print(f"\r\nwindows({len(list_window)}), data: {list_window}")
-		
+	key_first_values = next(iter(window.values()))
+	print(f"\r\nwindows[{len(window)}][{len(key_first_values)}]")
+	for k,v in window.items():
+		print(f"{k}: {v}\r\n")
 	
 	# path_base = path_root.replace("custom","03_windowing_new")
 	# #path_split = os.path.join(path_root,"04_split")
@@ -158,8 +170,6 @@ def main():
 		)
 
 		wr.experiment_data(
-			#x_column_name = "electro_value"
-			#,y_column_name = "applied_stimulus"
 			path_origin=path_stimulus_data_joined
 			,path_destination=path_experiment_data
 			,sample_size=sample_size
@@ -169,31 +179,34 @@ def main():
 			,show_debug_message=show_debug_message
 		)
 
-		# wr.fixed_window_dataset(
-		# 	path_origin=path_experiment_data
-		# 	,path_destination=path_fixed_window_dataset
-		# 	,dataset_structure=config["dataset_structure"]
-		# 	,list_window=list_window
-		# 	,event_basefile_therm=config["event_basefile_therm"]
-		# 	,show_debug_message=show_debug_message
-		# )
-
-		wr.window_fixed(
-			path_origin=path_experiment_data
-			,path_destination=path_fixed_window_dataset
-			,list_window=list_window
-			,dataset_structure=dataset_structure
-			,show_debug_message=show_debug_message
-		)
+		if 1 == 0:
+			wr.window_fixed(
+				path_origin=path_experiment_data
+				,path_destination=path_fixed_window_dataset
+				,window=window
+				,dataset_structure=dataset_structure
+				,show_debug_message=show_debug_message
+			)
 		
+			wr.summarize(
+				path_origin=path_fixed_window_dataset
+				,path_destination=path_fixed_window_summarized_dataset
+				,event_basefile_therm=config["event_basefile_therm"]
+				,dataset_structure=dataset_structure
+				,show_debug_message=show_debug_message
+			)
 
-		wr.summarize(
-			path_origin=path_fixed_window_dataset
-			,path_destination=path_fixed_window_summarized_dataset
+		print(path_fixed_window_dataset, "AAAAAAAAAAAAAAAAAAAAAAAH)")
+		wr.fixed_window_dataset(
+			path_origin=path_experiment_data
+			,path_destination_windowed = path_fixed_window_dataset
+			,path_destination_summarized_window=path_fixed_window_summarized_dataset
+			,dataset_structure=config["dataset_structure"]
+			,window=window
 			,event_basefile_therm=config["event_basefile_therm"]
-			,dataset_structure=dataset_structure
 			,show_debug_message=show_debug_message
 		)
+
 		# rawdata(
 		# 	x_column_name=x_column_name
 		# 	,y_column_name=y_column_name
@@ -223,8 +236,8 @@ def main():
 		ut.debug(message="path_destination", var=path_result,show=show_debug_message)
 
 		cl.classify(
-			path_base=path_base
-			,list_window=list_window
+			path_base=path_fixed_window_summarized_dataset
+			,window=window
 			,path_destination=path_result
 			,list_classifier=list_classifier
 			,random_state = config["random_state"]
