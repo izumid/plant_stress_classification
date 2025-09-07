@@ -11,6 +11,124 @@ sys.path.append(parent_dir)
 import md_util as ut
 
 
+#MARK: Imbalance Search
+def imbalanced_window_search():
+	#samples = [3648,10971,33871] #0
+	#samples = [3600,10000,30000] #4
+	#samples = [3000,10000,30000] #3
+	#samples = [3000,9000,30000] #7
+	#samples = [3600,9000,30000] #7
+	#samples = [3600,9600,28800] #8
+	#samples = [3600,10800,32400] #10
+	samples = [3600,9000,28800] #9
+	
+	work_all_sample_size = []
+
+	for s in samples:
+		aux = []
+		for i in range(1,min(samples),1):
+			#print(s, i)
+			window = window_approved(s,i,window_size_limit=10,window_sample_size_limit=100)
+			if not window is None: aux.append(window)
+
+		work_all_sample_size.append((s,aux))
+			
+	
+	for sample_size in work_all_sample_size:
+		print(sample_size)
+
+	window_each_sample_size = work_all_sample_size[0][1]
+	window_each_sample_size.extend(work_all_sample_size[1][1])
+	window_each_sample_size.extend(work_all_sample_size[2][1])
+	window_each_sample_size.sort(reverse=True)
+
+	window_size = [window[0] for window in window_each_sample_size]
+	#print("\r\nsorted:",x)
+
+	valid = []
+	n = 3
+	for item in set(window_size):  # Iterate through unique elements to avoid redundant checks
+		if window_size.count(item) == n: valid.append(int(item))
+	
+	valid.sort(reverse=True)
+	print(f"\r\nvalid windows({len(valid)}), data: {valid}")
+
+#imbalanced_window_search() 
+
+
+def unique_total_value():
+	path_relative = r"data\00_stimulus_data_joined"
+	path_origin = os.path.join(os.getcwd(), path_relative)
+
+	for file in os.listdir(path_origin):
+		stimulus_data = np.load(os.path.join(path_origin,file))
+		stimulus_data = np.unique(stimulus_data)
+		print(f"File: {file}, unique: {len(stimulus_data)}")
+
+#unique_total_value()
+
+
+## Old windowing
+'''def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+	"""
+		Description: 
+
+		Arguments:
+			x_column_name(string): ;
+			y_column_name(string): ;
+			path_origin(string): ;
+			path_parent_root(string): ;
+			sample_size(int): ;
+	"""
+
+	try:
+		if not os.path.exists(path_destination): 
+			os.makedirs(path_destination)
+
+			for m,n in list_window:
+				fix_window_data = []
+				file_name = f"{str(m)}x{str(n)}"				
+				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
+
+				for stimulus_file in os.listdir(path_origin):
+					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
+					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
+					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
+					
+					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+					else: stimulus_applied = 1
+
+					for index_start in (range(0,len(stimulus_value),n)):
+						index_end = index_start+n
+						window = np.array(stimulus_value[index_start:index_end])
+						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+
+						fix_window_data.append(
+							[
+								stimulus_stage
+								,np.mean(window)
+								,stats.iqr(window)
+								,np.var(window)
+								,np.std(window)
+								,stats.skew(window)
+								,stats.kurtosis(window)
+								,stimulus_applied
+							]
+						)
+
+				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
+				df.to_feather(os.path.join(path_destination,file_name+".feather"))
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")'''
+
+
+##########################################################
+## 						WRANGLING						##
+##########################################################
+
+# MARK: Win. Approve
 def window_approved(sample_class_size,window_size,window_size_limit,window_sample_size_limit):
 	avoid_decimal = sample_class_size / window_size
 	avoid_remainder = sample_class_size % window_size
@@ -25,7 +143,7 @@ def window_approved(sample_class_size,window_size,window_size_limit,window_sampl
 #print(window_check_valid(3648,114))
 #print(type(window_check_valid(96980,114)))
 
-# MARK: Window
+# MARK: Win. Shape
 def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sample_size_limit=10,reverse=True,sample_unique_length=None,balanced=True,show_debug_message=False):
 	"""
 		Description:
@@ -93,124 +211,15 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 			if show_debug_message: window = [min(window, key=lambda x: x[0])]
 
 			window.sort(reverse=True)
-			stimulus_window[stimulus_sample] = window
+			found_keys = [key for key, value in sample_unique_length.items() if value == stimulus_sample]
+			stimulus_name = found_keys[0].lower().replace(' ', '_')
+			idx_last_underscore = stimulus_name[::-1].index('_')+1
+			stimulus_name = f"{stimulus_name[:-idx_last_underscore]}({stimulus_sample})"
+			stimulus_window[stimulus_name] = window
 
 	return(stimulus_window)
 
-
-#MARK: Imbalance Search
-def imbalanced_window_search():
-	#samples = [3648,10971,33871] #0
-	#samples = [3600,10000,30000] #4
-	#samples = [3000,10000,30000] #3
-	#samples = [3000,9000,30000] #7
-	#samples = [3600,9000,30000] #7
-	#samples = [3600,9600,28800] #8
-	#samples = [3600,10800,32400] #10
-	samples = [3600,9000,28800] #9
-	
-	work_all_sample_size = []
-
-	for s in samples:
-		aux = []
-		for i in range(1,min(samples),1):
-			#print(s, i)
-			window = window_approved(s,i,window_size_limit=10,window_sample_size_limit=100)
-			if not window is None: aux.append(window)
-
-		work_all_sample_size.append((s,aux))
-			
-	
-	for sample_size in work_all_sample_size:
-		print(sample_size)
-
-	window_each_sample_size = work_all_sample_size[0][1]
-	window_each_sample_size.extend(work_all_sample_size[1][1])
-	window_each_sample_size.extend(work_all_sample_size[2][1])
-	window_each_sample_size.sort(reverse=True)
-
-	window_size = [window[0] for window in window_each_sample_size]
-	#print("\r\nsorted:",x)
-
-	valid = []
-	n = 3
-	for item in set(window_size):  # Iterate through unique elements to avoid redundant checks
-		if window_size.count(item) == n: valid.append(int(item))
-	
-	valid.sort(reverse=True)
-	print(f"\r\nvalid windows({len(valid)}), data: {valid}")
-
-#imbalanced_window_search() 
-
-
-def unique_total_value():
-	path_relative = r"data\00_stimulus_data_joined"
-	path_origin = os.path.join(os.getcwd(), path_relative)
-
-	for file in os.listdir(path_origin):
-		stimulus_data = np.load(os.path.join(path_origin,file))
-		stimulus_data = np.unique(stimulus_data)
-		print(f"File: {file}, unique: {len(stimulus_data)}")
-
-#unique_total_value()
-
-
-#MARK: Win. Dataset
-'''def fixed_window_dataset(path_destination,list_window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
-	"""
-		Description: 
-
-		Arguments:
-			x_column_name(string): ;
-			y_column_name(string): ;
-			path_origin(string): ;
-			path_parent_root(string): ;
-			sample_size(int): ;
-	"""
-
-	try:
-		if not os.path.exists(path_destination): 
-			os.makedirs(path_destination)
-
-			for m,n in list_window:
-				fix_window_data = []
-				file_name = f"{str(m)}x{str(n)}"				
-				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
-				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
-
-				for stimulus_file in os.listdir(path_origin):
-					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
-					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
-					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
-					
-					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
-					else: stimulus_applied = 1
-
-					for index_start in (range(0,len(stimulus_value),n)):
-						index_end = index_start+n
-						window = np.array(stimulus_value[index_start:index_end])
-						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
-
-						fix_window_data.append(
-							[
-								stimulus_stage
-								,np.mean(window)
-								,stats.iqr(window)
-								,np.var(window)
-								,np.std(window)
-								,stats.skew(window)
-								,stats.kurtosis(window)
-								,stimulus_applied
-							]
-						)
-
-				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
-				df = pd.DataFrame(fix_window_data,columns=df.columns.tolist())
-				df.to_feather(os.path.join(path_destination,file_name+".feather"))
-	except Exception as error:
-		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")'''
-
-
+# MARK: Win. Dataset
 def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
 		Description: 
@@ -227,7 +236,15 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 		if not os.path.exists(path_destination_windowed): os.makedirs(path_destination_windowed)
 		if not os.path.exists(path_destination_summarized_window): os.makedirs(path_destination_summarized_window)
 		
-		for value in window.values():
+		if len(window) > 1: imbalanced = True
+		# Must change the window key name from 3648 to cold!
+		# for each list value of the fisrt element. How all elements has the same window_size inside 246 loop [...]
+		# [...] can capare if window key match with stimulus_file (without stage information e.g after). 
+		
+		key_first_values = next(iter(window.values()))
+
+		for i in range(len(window)):
+			value = []
 			for w in value:
 				window_size = w[0]
 				window_sample_size = w[1]
@@ -271,11 +288,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 
 
-##########################################################
-## 						WRANGLING						##
-##########################################################
-
-#MARK: Join Data
+#MARK: Stimulus Join
 def join_stimulus_data(random_state,path_destination,path_origin,show_debug_message):
 	"""
 		Description: Unify each stimulus per class to his own single file, limiting the dataset with the desired sample size;
@@ -331,16 +344,16 @@ def experiment_data(path_destination,path_origin,sample_size,unique_value,balanc
 	try:
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
 
-		for file in os.listdir(path_origin):
-			stimulus_data = np.load(os.path.join(path_origin,file))
+		for filename in os.listdir(path_origin):
+			stimulus_data = np.load(os.path.join(path_origin,filename))
 			#stimulus_data_size = len(stimulus_data)
 
 			if unique_value: 
 				stimulus_data = np.unique(stimulus_data)
 				if balanced_sample: sample_size = sample_unique_length["Cold after"]
-				else: sample_size = sample_unique_length[Path(file).stem]
+				else: sample_size = sample_unique_length[Path(filename).stem]
 			
-			ut.debug(message=f"[Experiment Data] File: {file}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
+			ut.debug(message=f"[Experiment Data] File: {filename}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
 			stimulus_data = stimulus_data[:(sample_size)]
 			
 			#if stimulus_data_size >= sample_size: 
@@ -348,12 +361,12 @@ def experiment_data(path_destination,path_origin,sample_size,unique_value,balanc
 			#else: stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
 
 			
-			np.save(os.path.join(path_destination,file), stimulus_data)
+			np.save(os.path.join(path_destination,filename.lower().replace(' ','_')), stimulus_data)
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="Experiment Data")
 
 
-#MARK: Split Window
+#MARK: DEPRECATED
 def window_fixed(path_destination,window,path_origin,show_debug_message,dataset_structure):
 	"""
 		Description: 
@@ -394,9 +407,6 @@ def window_fixed(path_destination,window,path_origin,show_debug_message,dataset_
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="window_fixed: split single array 1D into N subarrays (2D) of same dimensions")
 
-
-
-#MARK: Summarize
 def summarize(path_destination,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
 		Description: 

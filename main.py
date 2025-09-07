@@ -113,7 +113,9 @@ def main():
 		path_result = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
 	
 	#if int(input("Type 1 to show windows list: ")):
+	print(window)
 	key_first_values = next(iter(window.values()))
+	
 	print(f"\r\nwindows[{len(window)}][{len(key_first_values)}]")
 	for k,v in window.items():
 		print(f"{k}: {v}\r\n")
