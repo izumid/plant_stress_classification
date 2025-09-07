@@ -100,6 +100,7 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 				
 
 				if k_fold_split:
+					print("Stratified K Fold")
 					execution = 1
 					for train_index, test_index in skf.split(X, X_label):
 						print(f"Model: {model}({window_filename}). Cross validation fold[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
@@ -130,11 +131,12 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 
 						rounds+=1
 						execution+=1
-				else:				
+				else:
+					print("Train Test Split")
 					execution = 1
 					X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,shuffle=True,random_state=random_state)
 				
-					print(f"Model: {model}({window}). Train Test execution[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
+					print(f"Model: {model}({window_filename}). Train Test execution[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
 
 					X_train_scaled = scaler.fit_transform(X_train)
 					X_test_scaled = scaler.transform(X_test)
@@ -158,7 +160,6 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 					result.append(data)
 					rounds+=1
 					execution+=1
-
 
 			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_column_type.items()})
 			df = pd.DataFrame(result,columns=df.columns.tolist())
