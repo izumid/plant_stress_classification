@@ -65,7 +65,7 @@ def main():
 	path_experiment_data =  os.path.join(os.getcwd(),r"data\01_experiment_data")
 	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\2.0_fixed_window")	
 	path_fixed_window_summarized_dataset = os.path.join(os.getcwd(),r"data\2.1_summarized_dataset")	
-	path_result = os.path.join(os.getcwd(),r"data\04_experiment_result")
+	path_result = os.path.join(os.getcwd(),r"data\03_experiment_result")
 
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
@@ -81,14 +81,13 @@ def main():
 		if balanced_sample:
 			print("3th Experiment")
 			unique_data_sample_length = int(config["unique_sample_size"] / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-			print(unique_data_sample_length, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 			window = wr.window_shape(sample_class_size=unique_data_sample_length,show_debug_message=show_debug_message)
 			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
 			path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"02_value_unique\01_balanced")
-			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
+			path_result = os.path.join(path_result, r"02_value_unique\01_balanced")
 		else:
 			print("2st Experiment")
 			unique_data_sample_length = config["unique_imbalanced_sample_length"]
@@ -99,7 +98,7 @@ def main():
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 			path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"02_value_unique\02_imbalanced")
-			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
+			path_result = os.path.join(path_result, r"02_value_unique\02_imbalanced")
 	else:
 		print("1st Experiment")
 		unique_data_sample_length = None
@@ -109,7 +108,7 @@ def main():
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
 		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
 		path_fixed_window_summarized_dataset = os.path.join(path_fixed_window_summarized_dataset, r"01_value_duplicated\01_balanced")
-		path_result = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
+		path_result = os.path.join(path_result, r"01_value_duplicated\01_balanced")
 	
 	#if int(input("Type 1 to show windows list: ")):
 	print(window)
@@ -170,7 +169,6 @@ def main():
 			,show_debug_message=show_debug_message
 		)
 		
-		print(sample_size,"--------------------------")
 		wr.experiment_data(
 			path_origin=path_stimulus_data_joined
 			,path_destination=path_experiment_data
@@ -236,9 +234,9 @@ def main():
 
 		ut.debug(message="path_destination", var=path_result,show=show_debug_message)
 
+		print(path_result,"aAAAAAAAAAAAAAAAAAA")
 		cl.classify(
-			path_base=path_fixed_window_summarized_dataset
-			,window=window
+			path_origin=path_fixed_window_summarized_dataset
 			,path_destination=path_result
 			,list_classifier=list_classifier
 			,random_state = config["random_state"]
