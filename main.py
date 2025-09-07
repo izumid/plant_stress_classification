@@ -198,7 +198,6 @@ def main():
 				,show_debug_message=show_debug_message
 			)
 
-		print(path_fixed_window_dataset, "AAAAAAAAAAAAAAAAAAAAAAAH)")
 		wr.fixed_window_dataset(
 			path_origin=path_experiment_data
 			,path_destination_windowed = path_fixed_window_dataset

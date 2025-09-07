@@ -174,7 +174,7 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 		window.sort(key=lambda x: x[0], reverse=reverse)
 		
 		if show_debug_message: window = [min(window, key=lambda x: x[0])]
-		stimulus_window[sample_class_size] = window
+		stimulus_window[f"all_stimuli_length({sample_class_size})"] = window
 
 	else:
 		stimulus_window_indiviual = []
@@ -219,7 +219,7 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 
 	return(stimulus_window)
 
-# MARK: Win. Dataset
+# MARK: Fix. Win. Dt7
 def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
 		Description: 
@@ -241,50 +241,73 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 		# for each list value of the fisrt element. How all elements has the same window_size inside 246 loop [...]
 		# [...] can capare if window key match with stimulus_file (without stage information e.g after). 
 		
-		key_first_values = next(iter(window.values()))
+		first_key_value = next(iter(window.values()))
 
-		for i in range(len(window)):
-			value = []
-			for w in value:
-				window_size = w[0]
-				window_sample_size = w[1]
-				fixed_window_data = []
-				summarized_data = []
+
+
+		for i in range(len(first_key_value)):
+			fixed_window_data = []
+			summarized_data = []
+
+			for filename in os.listdir(path_origin):
+				idx_last_underscore = filename[::-1].index('_')+1
+				key_name_search = filename[:-idx_last_underscore]
+
+				for key in window.keys():
+					if key_name_search in key:  
+						key_name_search = key
+						break
+
+				window_current = window[key_name_search][i]
+				window_size = window_current[0]
+				window_sample_size = window_current[1]
+				
+	
 				file_name = f"{str(window_size)}x{str(window_sample_size)}"				
 				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
 				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
 
-				for stimulus_file in os.listdir(path_origin):
-					#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
-					stimulus_stage = os.path.splitext(stimulus_file)[0].replace(' ','_').lower()
-					stimulus_value = np.load(os.path.join(path_origin,stimulus_file))
+				#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
+				stimulus_stage = os.path.splitext(filename)[0]
+				print("SSSSSSSSSSSTIMULUS STAAAGEEE", stimulus_stage)
+				stimulus_value = np.load(os.path.join(path_origin,filename))
+				stimulus_total_sample_length = len(stimulus_value)
+				
+				if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+				else: stimulus_applied = 1
+
+				for index_start in (range(0,stimulus_total_sample_length,window_sample_size)):
+					index_end = index_start + window_sample_size
+					window_data = np.array(stimulus_value[index_start:index_end])
+					window_data_length = len(window_data)
+
+					ut.debug(message=f"[Fixed Window Dataset] File {filename} length({stimulus_total_sample_length}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
 					
-					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
-					else: stimulus_applied = 1
+					fixed_window_data.append([stimulus_stage,stimulus_total_sample_length/window_data_length,window_data_length,window_data])
+					summarized_data.append(
+						[
+							stimulus_stage
+							,np.mean(window_data)
+							,stats.iqr(window_data)
+							,np.var(window_data)
+							,np.std(window_data)
+							,stats.skew(window_data)
+							,stats.kurtosis(window_data)
+							,stimulus_applied
+						]
+					)
 
-					for index_start in (range(0,len(stimulus_value),window_sample_size)):
-						index_end = index_start + window_sample_size
-						window = np.array(stimulus_value[index_start:index_end])
-						ut.debug(message=f"[Fixed Window Dataset] File {stimulus_file} length({len(stimulus_value)}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
-						fixed_window_data.append(window)
-						summarized_data.append(
-							[
-								stimulus_stage
-								,np.mean(window)
-								,stats.iqr(window)
-								,np.var(window)
-								,np.std(window)
-								,stats.skew(window)
-								,stats.kurtosis(window)
-								,stimulus_applied
-							]
-						)
+			struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
+			df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
+			df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())
+			df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{file_name}.feather"))
 
-				np.save(os.path.join(path_destination_windowed,f"{file_name}.npy"),fixed_window_data)
-				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
-				df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
-				df.to_feather(os.path.join(path_destination_summarized_window,f"{file_name}.feather"))
+			#np.save(os.path.join(path_destination_windowed,f"{file_name}.npy"),fixed_window_data)
+			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+			df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
+			df.to_feather(os.path.join(path_destination_summarized_window,f"{file_name}.feather"))
 	except Exception as error:
+		print(error)
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 
 
