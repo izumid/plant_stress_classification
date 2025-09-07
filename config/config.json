@@ -7,24 +7,15 @@
 	,"y_size_class": 2
 	,"y_event_value": 1
 	,"pre_processing_data": true
-	,"summarize": true
 	,"unique_value": true
-	,"balanced_sample": false
+	,"balanced_sample": true
 	,"classify": false
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"k_fold_split": 5
 	,"verbose": false
 	,"random_state": 42
 	,"show_debug_message": true
-	,"_sample_unique_length": {
-		"Cold after": 3648,
-		"Cold before": 3648,
-		"Low light after": 10971,
-		"Low light before":	10971,
-		"Manitol after": 33871,
-		"Manitol before": 33871
-	}
-	,"sample_unique_length": {
+	,"unique_imbalanced_sample_length": {
 		"Cold after": 3600,
 		"Cold before": 3600,
 		"Low light after": 10800,

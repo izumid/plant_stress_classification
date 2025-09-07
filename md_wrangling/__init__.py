@@ -220,7 +220,7 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 	return(stimulus_window)
 
 # MARK: Fix. Win. Dt7
-def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
+def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,unique_data,balanced_sample,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
 		Description: 
 
@@ -235,41 +235,41 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 	try:
 		if not os.path.exists(path_destination_windowed): os.makedirs(path_destination_windowed)
 		if not os.path.exists(path_destination_summarized_window): os.makedirs(path_destination_summarized_window)
-		
-		if len(window) > 1: imbalanced = True
-		# Must change the window key name from 3648 to cold!
-		# for each list value of the fisrt element. How all elements has the same window_size inside 246 loop [...]
-		# [...] can capare if window key match with stimulus_file (without stage information e.g after). 
-		
+				
 		first_key_value = next(iter(window.values()))
-
-
 
 		for i in range(len(first_key_value)):
 			fixed_window_data = []
 			summarized_data = []
 
 			for filename in os.listdir(path_origin):
-				idx_last_underscore = filename[::-1].index('_')+1
-				key_name_search = filename[:-idx_last_underscore]
-
-				for key in window.keys():
-					if key_name_search in key:  
-						key_name_search = key
-						break
-
-				window_current = window[key_name_search][i]
-				window_size = window_current[0]
-				window_sample_size = window_current[1]
 				
-	
+				if unique_data and not balanced_sample:
+					print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+					idx_last_underscore = filename[::-1].index('_')+1
+					key_name_search = filename[:-idx_last_underscore]
+
+					for key in window.keys():
+						if key_name_search in key:  
+							key_name_search = key
+							break
+
+					window_current = window[key_name_search][i]
+					window_size = window_current[0]
+					window_sample_size = window_current[1]
+				else:
+					print("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
+					first_key = next(iter(window))
+					window_current = window[first_key][i]
+					window_size = window_current[0]
+					window_sample_size = window_current[1]
+
+
 				file_name = f"{str(window_size)}x{str(window_sample_size)}"				
 				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
 				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
 
-				#stimulus_dataset = pd.read_feather(os.path.join(path_origin,stimulus_file))
 				stimulus_stage = os.path.splitext(filename)[0]
-				print("SSSSSSSSSSSTIMULUS STAAAGEEE", stimulus_stage)
 				stimulus_value = np.load(os.path.join(path_origin,filename))
 				stimulus_total_sample_length = len(stimulus_value)
 				
@@ -348,7 +348,7 @@ def join_stimulus_data(random_state,path_destination,path_origin,show_debug_mess
 
 
 #MARK: Exp. Data
-def experiment_data(path_destination,path_origin,sample_size,unique_value,balanced_sample,sample_unique_length,show_debug_message):
+def experiment_data(path_destination,path_origin,sample_size,unique_value,balanced_sample,unique_data_sample_length,show_debug_message):
 	"""
 		Description: Unify each stimulus per class to his own single file;
 
@@ -373,8 +373,8 @@ def experiment_data(path_destination,path_origin,sample_size,unique_value,balanc
 
 			if unique_value: 
 				stimulus_data = np.unique(stimulus_data)
-				if balanced_sample: sample_size = sample_unique_length["Cold after"]
-				else: sample_size = sample_unique_length[Path(filename).stem]
+				if balanced_sample: sample_size = unique_data_sample_length #unique_value/len(sample_unique_length.keys())
+				else: sample_size = unique_data_sample_length[Path(filename).stem]
 			
 			ut.debug(message=f"[Experiment Data] File: {filename}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
 			stimulus_data = stimulus_data[:(sample_size)]

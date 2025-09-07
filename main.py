@@ -69,13 +69,9 @@ def main():
 
 	unique_value=config["unique_value"]
 	balanced_sample = config["balanced_sample"]
-	summarize = config["summarize"]
 	sample_size = config["sample_size"]
-	unique_sample_size = config["unique_sample_size"]
 	observation_size = config["x_size_category"] * config["y_size_class"]
-	
 	random_state = config["random_state"]
-	sample_unique_length = config["sample_unique_length"]
 	show_debug_message = config["show_debug_message"]
 	dataset_structure = config["dataset_structure"]
 
@@ -84,8 +80,9 @@ def main():
 	if unique_value:
 		if balanced_sample:
 			print("3th Experiment")
-			unique_sample_size = int(unique_sample_size / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-			#window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
+			unique_data_sample_length = int(config["unique_sample_size"] / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
+			print(unique_data_sample_length, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+			window = wr.window_shape(sample_class_size=unique_data_sample_length,show_debug_message=show_debug_message)
 			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
@@ -94,10 +91,10 @@ def main():
 			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\01_balanced")
 		else:
 			print("2st Experiment")
-			unique_sample_size = sum(sample_unique_length.values())
-			minimum_observation_length =  min(sample_unique_length.values())
-			#list_window = wr.window_shape(total_sample_size=unique_sample_size,show_debug_message=show_debug_message)
-			window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=sample_unique_length,balanced=False,show_debug_message=show_debug_message)
+			unique_data_sample_length = config["unique_imbalanced_sample_length"]
+			unique_sample_size = sum(unique_data_sample_length.values())
+			window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=unique_data_sample_length,balanced=False,show_debug_message=show_debug_message)
+
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
 			path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
@@ -105,7 +102,9 @@ def main():
 			path_result = os.path.join(path_fixed_window_dataset, r"02_value_unique\02_imbalanced")
 	else:
 		print("1st Experiment")
+		unique_data_sample_length = None
 		window = wr.window_shape(sample_class_size=config["sample_size"],show_debug_message=show_debug_message)
+		
 		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicated\01_balanced"))
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
 		path_fixed_window_dataset = os.path.join(path_fixed_window_dataset, r"01_value_duplicated\01_balanced")
@@ -170,14 +169,15 @@ def main():
 			,random_state=random_state
 			,show_debug_message=show_debug_message
 		)
-
+		
+		print(sample_size,"--------------------------")
 		wr.experiment_data(
 			path_origin=path_stimulus_data_joined
 			,path_destination=path_experiment_data
 			,sample_size=sample_size
 			,unique_value=unique_value
 			,balanced_sample=balanced_sample
-			,sample_unique_length=sample_unique_length
+			,unique_data_sample_length=unique_data_sample_length
 			,show_debug_message=show_debug_message
 		)
 
@@ -204,6 +204,8 @@ def main():
 			,path_destination_summarized_window=path_fixed_window_summarized_dataset
 			,dataset_structure=config["dataset_structure"]
 			,window=window
+			,unique_data=unique_value
+			,balanced_sample=balanced_sample
 			,event_basefile_therm=config["event_basefile_therm"]
 			,show_debug_message=show_debug_message
 		)
@@ -223,8 +225,6 @@ def main():
 		df_non_stimuled = pd.read_feather(os.path.join(path_stimulus_class_splited,"non_stimuled.feather"))
 		df_stimuled = pd.read_feather(os.path.join(path_stimulus_class_splited,"stimuled.feather"))
 		"""
-
-		#windowing(list_dataframe=[df_non_stimuled,df_stimuled],x_column_name=x_column_name,y_column_name=y_column_name,list_window=list_window,path_destination=path_base,summarize=summarize)
 		
 
 	if config["classify"]:

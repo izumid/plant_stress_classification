@@ -69,7 +69,7 @@
 
 
 ## Validated
-- [x] 1st Experiment
-- [] 2nd Experiment
-- [x] 3th Experiment
-- [x] 4th Experiment
+- [x] 1st Experiment: "Duplicated" values Balanced Windows (small different MxN)
+- [x] 2nd Experiment: Unique Values and Imbalanced stimuli data
+- [] 3th Experiment: Unique Values and Balanced stimuli data
+- [x] 4th Experiment: "Duplicated" values Balanced Windows (large different MxN)
