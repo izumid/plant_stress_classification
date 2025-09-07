@@ -12,7 +12,7 @@
 	,"classify": true
 	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
-	,"k_fold_split": 0
+	,"k_fold_split": 5
 	,"verbose": false
 	,"random_state": 42
 	,"show_debug_message": true

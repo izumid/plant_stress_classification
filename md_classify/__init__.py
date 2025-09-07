@@ -39,8 +39,7 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 		int_verbose = int(verbose)
 		scaler = MinMaxScaler()
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
-		rounds = 0
-		header_txt = ["model","window","samples_summarized","accuracy_train","accuracy_test","presicion","recall","f1_score"]
+		rounds = 1
 		file = os.listdir(path_origin)
 		
 		if k_fold_split: 
@@ -62,8 +61,8 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 		print(file,len(file),total_rounds)
 		
 		for window_filename in file:
-			window_name = Path(window_filename)
-			window_size_sample = Path(window_filename).stem.split('x')
+			window_name = Path(window_filename).stem
+			window_size_sample = window_name.split('x')
 			window_size = int(window_size_sample[0])
 			window_sample_size = int(window_size_sample[1])
 
@@ -78,7 +77,6 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 			y = df_train.iloc[:, -1]
 			result = []
 
-
 			for model in list_classifier:
 				if not (model != "DT" and model != "XGB" and model != "RF"): 
 					min_samples_leaf = int((window_sample_size * 0.8) *0.1)
@@ -86,7 +84,6 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 					max_depth = 3
 					if min_samples_leaf <= 1: min_samples_leaf = 2
 					if min_samples_split <= 1: min_samples_split = 2
-
 
 				match model:
 					case "DUM": classifier = DummyClassifier(random_state=random_state,strategy="stratified")
