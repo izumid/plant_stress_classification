@@ -7,8 +7,8 @@
 	,"y_size_class": 2
 	,"y_event_value": 1
 	,"pre_processing_data": true
-	,"unique_value": true
-	,"balanced_sample": true
+	,"unique_value": false
+	,"balanced_sample": false
 	,"classify": false
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"k_fold_split": 5

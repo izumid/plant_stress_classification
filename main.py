@@ -63,8 +63,8 @@ def main():
 	path_subsampled = os.path.join(os.getcwd(),r"data\00_subsampled_data")
 	path_stimulus_data_joined = os.path.join(os.getcwd(),r"data\00_stimulus_data_joined")
 	path_experiment_data =  os.path.join(os.getcwd(),r"data\01_experiment_data")
-	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\02_fixed_window")	
-	path_fixed_window_summarized_dataset = os.path.join(os.getcwd(),r"data\03_summarized_dataset")	
+	path_fixed_window_dataset = os.path.join(os.getcwd(),r"data\2.0_fixed_window")	
+	path_fixed_window_summarized_dataset = os.path.join(os.getcwd(),r"data\2.1_summarized_dataset")	
 	path_result = os.path.join(os.getcwd(),r"data\04_experiment_result")
 
 	unique_value=config["unique_value"]

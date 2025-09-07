@@ -128,6 +128,84 @@ def unique_total_value():
 ## 						WRANGLING						##
 ##########################################################
 
+#MARK: Stimulus Join
+def join_stimulus_data(random_state,path_destination,path_origin,show_debug_message):
+	"""
+		Description: Unify each stimulus per class to his own single file, limiting the dataset with the desired sample size;
+
+		Arguments:
+			path_destination(string): 
+			path_origin(string): input data path. In that case saved in N .txt fikes;
+			path_parent_root(string): the main output folder to save data as numpy arrays and start processing the steps;
+			random_state(int): pseudo random to chose registries (observations) of dataset;
+			sample_size(int): observations size of the main dataset;
+			show_debug_message(boolean): if true print a message, variables values are optional;
+	"""
+
+
+	np.random.seed(random_state) #setting random seed globaly
+
+	try:
+		if not os.path.exists(path_destination): 
+			ut.debug(message="[Joining stimulus data]",show=show_debug_message)
+			os.makedirs(path_destination)
+
+			for folder in os.listdir(path_origin):
+				if "lectrodes" not in folder:
+					path_absolute = os.path.join(path_origin,folder)
+					joined_data = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
+					joined_data = np.concatenate(joined_data)
+					np.random.shuffle(joined_data) 
+
+					ut.debug(var=f"{joined_data.shape},{folder}",message="join_stimulus_data",show=show_debug_message)
+					np.save(os.path.join(path_destination,f"{folder}.npy"), joined_data)
+
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message="stimulus_category_class_reduced: txt files to numpy")
+
+
+#MARK: Exp. Data
+def experiment_data(path_destination,path_origin,sample_size,unique_value,balanced_sample,unique_data_sample_length,show_debug_message):
+	"""
+		Description: Unify each stimulus per class to his own single file;
+
+		Arguments:
+			path_origin(string): ;
+			path_parent_root(string): ;
+			unique_value(boolean): ;
+			random_state(int): ;
+			sample_size(int): ;		
+	"""
+	
+	# setting random seed globaly;
+	# Randomly collecting data again to ensure diversity of observations;
+	# np.random.seed(random_state) 
+
+	try:
+		if not os.path.exists(path_destination): os.makedirs(path_destination)
+
+		for filename in os.listdir(path_origin):
+			stimulus_data = np.load(os.path.join(path_origin,filename))
+			#stimulus_data_size = len(stimulus_data)
+
+			if unique_value: 
+				stimulus_data = np.unique(stimulus_data)
+				if balanced_sample: sample_size = unique_data_sample_length #unique_value/len(sample_unique_length.keys())
+				else: sample_size = unique_data_sample_length[Path(filename).stem]
+			
+			ut.debug(message=f"[Experiment Data] File: {filename}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
+			stimulus_data = stimulus_data[:(sample_size)]
+			
+			#if stimulus_data_size >= sample_size: 
+				#stimulus_data = np.random.choice(stimulus_data,size=sample_size,replace=False) 
+			#else: stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
+
+			
+			np.save(os.path.join(path_destination,filename.lower().replace(' ','_')), stimulus_data)
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message="Experiment Data")
+
+
 # MARK: Win. Approve
 def window_approved(sample_class_size,window_size,window_size_limit,window_sample_size_limit):
 	avoid_decimal = sample_class_size / window_size
@@ -241,11 +319,12 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 		for i in range(len(first_key_value)):
 			fixed_window_data = []
 			summarized_data = []
+			window_total_size = 0
+			window_total_total_sample_size = 0
+			window_name=""
 
-			for filename in os.listdir(path_origin):
-				
+			for filename in os.listdir(path_origin):	
 				if unique_data and not balanced_sample:
-					print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
 					idx_last_underscore = filename[::-1].index('_')+1
 					key_name_search = filename[:-idx_last_underscore]
 
@@ -258,16 +337,14 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 					window_size = window_current[0]
 					window_sample_size = window_current[1]
 				else:
-					print("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
 					first_key = next(iter(window))
 					window_current = window[first_key][i]
 					window_size = window_current[0]
 					window_sample_size = window_current[1]
 
-
-				file_name = f"{str(window_size)}x{str(window_sample_size)}"				
+				#window_name = f"{str(window_size)}x{str(window_sample_size)}"				
 				ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
-				ut.debug(message=f"[Fixed Window Dataset] File: {file_name}",show=show_debug_message)
+				ut.debug(message=f"[Fixed Window Dataset] File: {window_name}",show=show_debug_message)
 
 				stimulus_stage = os.path.splitext(filename)[0]
 				stimulus_value = np.load(os.path.join(path_origin,filename))
@@ -296,100 +373,27 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 							,stimulus_applied
 						]
 					)
+				window_total_size += window_size
+				window_total_total_sample_size = window_sample_size
 
+			window_name = f"{str(window_total_size)}x{str(window_total_total_sample_size)}"
+			#print(f"new window name: {window_name}")
+			
 			struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
 			df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
 			df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())
-			df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{file_name}.feather"))
+			df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{window_name}.feather"))
 
-			#np.save(os.path.join(path_destination_windowed,f"{file_name}.npy"),fixed_window_data)
 			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
 			df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
-			df.to_feather(os.path.join(path_destination_summarized_window,f"{file_name}.feather"))
+			df.to_feather(os.path.join(path_destination_summarized_window,f"{window_name}.feather"))
 	except Exception as error:
 		print(error)
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")
 
 
-#MARK: Stimulus Join
-def join_stimulus_data(random_state,path_destination,path_origin,show_debug_message):
-	"""
-		Description: Unify each stimulus per class to his own single file, limiting the dataset with the desired sample size;
-
-		Arguments:
-			path_destination(string): 
-			path_origin(string): input data path. In that case saved in N .txt fikes;
-			path_parent_root(string): the main output folder to save data as numpy arrays and start processing the steps;
-			random_state(int): pseudo random to chose registries (observations) of dataset;
-			sample_size(int): observations size of the main dataset;
-			show_debug_message(boolean): if true print a message, variables values are optional;
-	"""
-
-
-	np.random.seed(random_state) #setting random seed globaly
-
-	try:
-		if not os.path.exists(path_destination): 
-			ut.debug(message="[Joining stimulus data]",show=show_debug_message)
-			os.makedirs(path_destination)
-
-			for folder in os.listdir(path_origin):
-				if "lectrodes" not in folder:
-					path_absolute = os.path.join(path_origin,folder)
-					joined_data = [np.loadtxt(os.path.join(path_absolute,file)) for file in sorted(os.listdir(path_absolute))]
-					joined_data = np.concatenate(joined_data)
-					np.random.shuffle(joined_data) 
-
-					ut.debug(var=f"{joined_data.shape},{folder}",message="join_stimulus_data",show=show_debug_message)
-					np.save(os.path.join(path_destination,f"{folder}.npy"), joined_data)
-
-	except Exception as error:
-		ut.log_file(filename="log_file",header_message="stimulus_category_class_reduced: txt files to numpy")
-
-
-#MARK: Exp. Data
-def experiment_data(path_destination,path_origin,sample_size,unique_value,balanced_sample,unique_data_sample_length,show_debug_message):
-	"""
-		Description: Unify each stimulus per class to his own single file;
-
-		Arguments:
-			path_origin(string): ;
-			path_parent_root(string): ;
-			unique_value(boolean): ;
-			random_state(int): ;
-			sample_size(int): ;		
-	"""
-	
-	# setting random seed globaly;
-	# Randomly collecting data again to ensure diversity of observations;
-	# np.random.seed(random_state) 
-
-	try:
-		if not os.path.exists(path_destination): os.makedirs(path_destination)
-
-		for filename in os.listdir(path_origin):
-			stimulus_data = np.load(os.path.join(path_origin,filename))
-			#stimulus_data_size = len(stimulus_data)
-
-			if unique_value: 
-				stimulus_data = np.unique(stimulus_data)
-				if balanced_sample: sample_size = unique_data_sample_length #unique_value/len(sample_unique_length.keys())
-				else: sample_size = unique_data_sample_length[Path(filename).stem]
-			
-			ut.debug(message=f"[Experiment Data] File: {filename}, sample size: {sample_size}, data length: {len(stimulus_data)}",show=show_debug_message)
-			stimulus_data = stimulus_data[:(sample_size)]
-			
-			#if stimulus_data_size >= sample_size: 
-				#stimulus_data = np.random.choice(stimulus_data,size=sample_size,replace=False) 
-			#else: stimulus_data = np.random.choice(stimulus_data,size=stimulus_data_size,replace=False)
-
-			
-			np.save(os.path.join(path_destination,filename.lower().replace(' ','_')), stimulus_data)
-	except Exception as error:
-		ut.log_file(filename="log_file",header_message="Experiment Data")
-
-
 #MARK: DEPRECATED
+'''
 def window_fixed(path_destination,window,path_origin,show_debug_message,dataset_structure):
 	"""
 		Description: 
@@ -429,6 +433,7 @@ def window_fixed(path_destination,window,path_origin,show_debug_message,dataset_
 				np.save(os.path.join(path_destination,f"{file_name}.npy"), window_data)
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="window_fixed: split single array 1D into N subarrays (2D) of same dimensions")
+
 
 def summarize(path_destination,path_origin,event_basefile_therm,show_debug_message,dataset_structure):
 	"""
@@ -475,3 +480,4 @@ def summarize(path_destination,path_origin,event_basefile_therm,show_debug_messa
 			df.to_feather(os.path.join(path_destination,Path(window_file).stem+".feather"))
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="summarize: read each file of 2D arrays, summarize then and generate a dataset")
+'''
