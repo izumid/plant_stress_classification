@@ -280,10 +280,10 @@ if __name__ == "__main__":
 
 	try: 
 		main()
-	except Exception as e: 
-		ut.log_file(filename="log_file",header_message="Error in Main!")
 
-	if 1== 0:
 		while True:
 			user_input = input('Type "Abnegation" to exit: ')
 			if user_input == "Abnegation": break
+
+	except Exception as e: 
+		ut.log_file(filename="log_file",header_message="Error in Main!")
