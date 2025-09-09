@@ -281,7 +281,7 @@ if __name__ == "__main__":
 	try: 
 		main()
 	except Exception as e: 
-		print(f"An error occurred: {e}")
+		ut.log_file(filename="log_file",header_message="Error in Main!")
 
 	if 1== 0:
 		while True:

@@ -9,6 +9,7 @@
 /codes/
 z_img/
 /data/
+/exe_file/
 
 # Ignore subfolders, but not root files
 z_bat/*/
