@@ -251,14 +251,15 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 		unique_sample_value = list(set(sample_unique_length.values()))
 		max_window_size = min(unique_sample_value)
 
-		for stimulus_sample_size in unique_sample_value:
-			sample_size = []
+		for stimulus_stage,stimulus_sample_size in sample_unique_length.items():
+			stimulus_stage_window = []
 			for window_size_test in range(1,max_window_size,1):
 				sample_size_possible = window_approved(sample_class_size=stimulus_sample_size,window_size=window_size_test,window_size_limit=10,window_sample_size_limit=10)
-				if not sample_size_possible is None: sample_size.append(sample_size_possible)
-			stimulus_window_indiviual.append((stimulus_sample_size,sample_size))
+				if not sample_size_possible is None: stimulus_stage_window.append(sample_size_possible)
+			stimulus_window_indiviual.append([stimulus_stage,stimulus_sample_size,stimulus_stage_window])
 
-		window_each_sample_size = [item for sublist in stimulus_window_indiviual for item in sublist[1]]
+		window_each_sample_size = [item for sublist in stimulus_window_indiviual for item in sublist[2]]
+		window_each_sample_size.sort()
 		#window_each_sample_size.sort(reverse=True)
 		#print("\r\nwindow_each_sample_size",len(window_each_sample_size), window_each_sample_size)
 
@@ -270,27 +271,41 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 		sample_size_valid.sort(reverse=True)
 			
 		stimulus_window = {}
-		for stimulus_sample in unique_sample_value:
-			#window size = stimuli_sample/sample_size
-			#window = [[stimulus_sample/sample_size,sample_size] 
+		# for stimulus_sample in unique_sample_value:
+		# 	#window size = stimuli_sample/sample_size
+		# 	#window = [[stimulus_sample/sample_size,sample_size] 
+		# 	window = []
+		# 	for sample_size in sample_size_valid:
+		# 		sample_window_size  = stimulus_sample / sample_size
+		# 		if sample_window_size.is_integer(): window.append([int(sample_window_size),sample_size])
+
+		# 	if test: window = [min(window, key=lambda x: x[0])]
+		# 	window.sort(reverse=True)
+		# 	found_keys = [key for key, value in sample_unique_length.items() if value == stimulus_sample]
+		# 	stimulus_name = found_keys[0].lower().replace(' ', '_')
+		# 	idx_last_underscore = stimulus_name[::-1].index('_')+1
+		# 	stimulus_name = f"{stimulus_name[:-idx_last_underscore]}({stimulus_sample})"
+		# 	stimulus_window[stimulus_name] = window
+
+		for stimulus_stage, stimulus_sample_size in sample_unique_length.items():
 			window = []
-			for sample_size in sample_size_valid: 
-				sample_window_size  = stimulus_sample / sample_size
+			for sample_size in sample_size_valid:
+				sample_window_size  = stimulus_sample_size / sample_size
 				if sample_window_size.is_integer(): window.append([int(sample_window_size),sample_size])
 
 			if test: window = [min(window, key=lambda x: x[0])]
-
 			window.sort(reverse=True)
-			found_keys = [key for key, value in sample_unique_length.items() if value == stimulus_sample]
-			stimulus_name = found_keys[0].lower().replace(' ', '_')
-			idx_last_underscore = stimulus_name[::-1].index('_')+1
-			stimulus_name = f"{stimulus_name[:-idx_last_underscore]}({stimulus_sample})"
+			#found_keys = [key for key, value in sample_unique_length.items() if value == stimulus_sample_size]
+			#stimulus_name = found_keys[0].lower().replace(' ', '_')
+			#idx_last_underscore = stimulus_name[::-1].index('_')+1
+			stimulus_name = f"{stimulus_stage.lower().replace(' ', '_')}({stimulus_sample_size})"
 			stimulus_window[stimulus_name] = window
 
+	#print("7777777", stimulus_window)
 	return(stimulus_window)
 
 # MARK: Fix. Win. Dt7
-def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,unique_data,balanced_sample,event_basefile_therm,show_debug_message,dataset_structure):
+def fixed_window_dataset(path_destination_windowed,path_destination_summarized_window,window,path_origin,unique_data,balanced_sample,event_basefile_therm,show_debug_message,verbose,dataset_structure):
 	"""
 		Description: 
 
@@ -306,47 +321,68 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 		if not os.path.exists(path_destination_windowed) and not os.path.exists(path_destination_summarized_window):	
 			os.makedirs(path_destination_windowed)
 			os.makedirs(path_destination_summarized_window)
-					
-			first_key_value = next(iter(window.values()))
+			
+		first_key_value = next(iter(window.values()))
 
-			ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+		ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
 
-			for i in range(len(first_key_value)):
-				fixed_window_data = []
-				summarized_data = []
-				window_total_size = 0
-				window_total_total_sample_size = 0
-				window_name=""
+		for i in range(len(first_key_value)):
+			fixed_window_data = []
+			summarized_data = []
+			window_total_size = 0
+			window_total_sample_size = 0
+			window_name=""
+			basefile = os.listdir(path_origin)
 
-				for filename in os.listdir(path_origin):	
-					
-					if unique_data and not balanced_sample:
-						idx_last_underscore = filename[::-1].index('_')+1
-						key_name_search = filename[:-idx_last_underscore]
+			for filename in basefile:	
+				
+				if unique_data and not balanced_sample:
+					# if not verbose:
+					# 	idx_last_underscore = filename[::-1].index('_')+1
+					# 	key_name_search = filename[:-idx_last_underscore]
 
-						for key in window.keys():
-							if key_name_search in key:  
-								key_name_search = key
-								break
+					# 	for key in window.keys():
+					# 		if key_name_search in key:  
+					# 			key_name_search = key
+					# 			break
+					# else:
+					key_name_search = Path(filename).stem
 
-						window_current = window[key_name_search][i]
-						window_size = window_current[0]
-						window_sample_size = window_current[1]
-						
-					else:
-						first_key = next(iter(window))
-						window_current = window[first_key][i]
-						window_size = window_current[0]
-						window_sample_size = window_current[1]
+					for key in window.keys():
+						if key_name_search in key:  
+							key_name_search = key
+							break
 
-					#window_name = f"{str(window_size)}x{str(window_sample_size)}"				
+					window_current = window[key_name_search][i]
+					window_size = window_current[0]
+					window_sample_size = window_current[1]
 
-					stimulus_stage = os.path.splitext(filename)[0]
-					stimulus_value = np.load(os.path.join(path_origin,filename))
-					stimulus_total_sample_length = len(stimulus_value)
-					
-					if event_basefile_therm in stimulus_stage: stimulus_applied = 0
-					else: stimulus_applied = 1
+					if verbose:
+						window_complete = sum(inner[0] for lists in window.values() for inner in lists)	
+						window_name = f"{window_complete}x{window_sample_size}"
+						ut.debug(message=f"[Fixed Window Dataset] file: {filename}. Imbalanced window {window_size} of {window_complete}, complete window: [{window_name}]",show=show_debug_message)
+				else:
+					first_key = next(iter(window))
+					window_current = window[first_key][i]
+					window_size = window_current[0]
+					window_sample_size = window_current[1]
+
+					if verbose:
+						window_complete = window_size*len(basefile)
+						window_name = f"{window_complete}x{window_sample_size}"
+						ut.debug(message=f"[Fixed Window Dataset] file: {filename}. Balanced window {window_size} of {window_complete}, complete window: [{window_name}]",show=show_debug_message)
+				
+				stimulus_stage = os.path.splitext(filename)[0]
+				stimulus_value = np.load(os.path.join(path_origin,filename))
+				stimulus_total_sample_length = len(stimulus_value)
+				
+				if event_basefile_therm in stimulus_stage: stimulus_applied = 0
+				else: stimulus_applied = 1
+				
+				path_absolute_destination_windowed = os.path.join(path_destination_windowed,f"{window_name}.feather")
+				path_absolute_destination_summarized_window = os.path.join(path_destination_summarized_window,f"{window_name}.feather")
+
+				if not os.path.exists(path_absolute_destination_windowed) and not os.path.exists(path_absolute_destination_summarized_window):	
 
 					for index_start in (range(0,stimulus_total_sample_length,window_sample_size)):
 						index_end = index_start + window_sample_size
@@ -368,21 +404,27 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 								,stimulus_applied
 							]
 						)
-					window_total_size += window_size
-					window_total_total_sample_size = window_sample_size
+					if not verbose:
+						window_total_size += window_size
+						window_total_sample_size = window_sample_size
 
-				window_name = f"{str(window_total_size)}x{str(window_total_total_sample_size)}"
-				ut.debug(message=f"[Fixed Window Dataset] Window: {window_name}",show=show_debug_message)
-							
-				struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
-				df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
-				df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())
-				df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{window_name}.feather"))
+			if not verbose: window_name = f"{str(window_total_size)}x{str(window_total_sample_size)}"
+						
+			struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
+			
+			df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
+			df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())
+			
+			if not verbose:  df_evaluate.to_feather(path_absolute_destination_windowed)
+			else:  df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{window_name}.feather"))
 
-				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
-				df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
-				df.to_feather(os.path.join(path_destination_summarized_window,f"{window_name}.feather"))
-				print(f"destination path: {os.path.join(path_destination_summarized_window,f"{window_name}.feather")}")
+			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
+			df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
+			
+			if not verbose: df.to_feather(os.path.join(path_destination_summarized_window,f"{window_name}.feather"))
+			else: df.to_feather(path_absolute_destination_summarized_window)
+
+			print(f"destination path: {path_destination_summarized_window}")
 	except Exception as error:
 		print(error)
 		ut.log_file(filename="log_file",header_message="dataset_stimulus_class: generate dataset with stimulus_name_stage, stimulus_value, applied_stimulus")

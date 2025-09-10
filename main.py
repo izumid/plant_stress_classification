@@ -112,12 +112,14 @@ def main():
 		path_result = os.path.join(path_result, r"01_value_duplicated\01_balanced")
 	
 	#if int(input("Type 1 to show windows list: ")):
-	print(window)
-	key_first_values = next(iter(window.values()))
 	
-	print(f"\r\nwindows[{len(window)}][{len(key_first_values)}]")
-	for k,v in window.items():
-		print(f"{k}: {v}\r\n")
+	if 1==1:
+		print(f"window structure: {window}")
+		key_first_values = next(iter(window.values()))
+		
+		print(f"\r\nwindows[{len(window)}][{len(key_first_values)}]")
+		for k,v in window.items():
+			print(f"{k}: {v}\r\n")
 	
 	# path_base = path_root.replace("custom","03_windowing_new")
 	# #path_split = os.path.join(path_root,"04_split")
@@ -207,6 +209,7 @@ def main():
 			,balanced_sample=balanced_sample
 			,event_basefile_therm=config["event_basefile_therm"]
 			,show_debug_message=show_debug_message
+			,verbose=True
 		)
 
 		# rawdata(
@@ -280,9 +283,9 @@ if __name__ == "__main__":
 	try: 
 		main()
 
-		while True:
-			user_input = input('Type "Abnegation" to exit: ')
-			if user_input == "Abnegation": break
+		# while True:
+		# 	user_input = input('Type "Abnegation" to exit: ')
+		# 	if user_input == "Abnegation": break
 
 	except Exception as e: 
 		ut.log_file(filename="log_file",header_message="Error in Main!")
