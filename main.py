@@ -209,7 +209,7 @@ def main():
 			,balanced_sample=balanced_sample
 			,event_basefile_therm=config["event_basefile_therm"]
 			,show_debug_message=show_debug_message
-			,verbose=True
+			,verbose=config["verbose"]
 		)
 
 		# rawdata(

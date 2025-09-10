@@ -8,13 +8,13 @@
 	,"y_event_value": 1
 	,"test": true
 	,"pre_processing_data": true
-	,"unique_value": false
+	,"unique_value": true
 	,"balanced_sample": true
 	,"classify": false
 	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
 	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
 	,"k_fold_split": 5
-	,"verbose": false
+	,"verbose": true
 	,"random_state": 42
 	,"show_debug_message": true
 	,"unique_imbalanced_sample_length": {

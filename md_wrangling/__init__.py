@@ -318,10 +318,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 	"""
 
 	try:
-		if not os.path.exists(path_destination_windowed) and not os.path.exists(path_destination_summarized_window):	
-			os.makedirs(path_destination_windowed)
-			os.makedirs(path_destination_summarized_window)
-			
+		
 		first_key_value = next(iter(window.values()))
 
 		ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
@@ -379,50 +376,46 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 				if event_basefile_therm in stimulus_stage: stimulus_applied = 0
 				else: stimulus_applied = 1
 				
-				path_absolute_destination_windowed = os.path.join(path_destination_windowed,f"{window_name}.feather")
-				path_absolute_destination_summarized_window = os.path.join(path_destination_summarized_window,f"{window_name}.feather")
 
-				if not os.path.exists(path_absolute_destination_windowed) and not os.path.exists(path_absolute_destination_summarized_window):	
+				for index_start in (range(0,stimulus_total_sample_length,window_sample_size)):
+					index_end = index_start + window_sample_size
+					window_data = np.array(stimulus_value[index_start:index_end])
+					window_data_length = len(window_data)
 
-					for index_start in (range(0,stimulus_total_sample_length,window_sample_size)):
-						index_end = index_start + window_sample_size
-						window_data = np.array(stimulus_value[index_start:index_end])
-						window_data_length = len(window_data)
+					#if not verbose: ut.debug(message=f"[Fixed Window Dataset] File {filename} length({stimulus_total_sample_length}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+					
+					fixed_window_data.append([stimulus_stage,stimulus_total_sample_length/window_data_length,window_data_length,window_data])
+					summarized_data.append(
+						[
+							stimulus_stage
+							,np.mean(window_data)
+							,stats.iqr(window_data)
+							,np.var(window_data)
+							,np.std(window_data)
+							,stats.skew(window_data)
+							,stats.kurtosis(window_data)
+							,stimulus_applied
+						]
+					)
+				if not verbose:
+					window_total_size += window_size
+					window_total_sample_size = window_sample_size
 
-						#ut.debug(message=f"[Fixed Window Dataset] File {filename} length({stimulus_total_sample_length}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
-						
-						fixed_window_data.append([stimulus_stage,stimulus_total_sample_length/window_data_length,window_data_length,window_data])
-						summarized_data.append(
-							[
-								stimulus_stage
-								,np.mean(window_data)
-								,stats.iqr(window_data)
-								,np.var(window_data)
-								,np.std(window_data)
-								,stats.skew(window_data)
-								,stats.kurtosis(window_data)
-								,stimulus_applied
-							]
-						)
-					if not verbose:
-						window_total_size += window_size
-						window_total_sample_size = window_sample_size
-
-			if not verbose: window_name = f"{str(window_total_size)}x{str(window_total_sample_size)}"
+			if not verbose: 
+				window_name = f"{str(window_total_size)}x{str(window_total_sample_size)}"
+				ut.debug(message=f"[Fixed Window Dataset] window: {window_name}",show=show_debug_message)
 						
 			struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
-			
+	
+			if not os.path.exists(path_destination_windowed): os.makedirs(path_destination_windowed)
+			if not os.path.exists(path_destination_summarized_window): os.makedirs(path_destination_summarized_window)
+
 			df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
 			df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())
-			
-			if not verbose:  df_evaluate.to_feather(path_absolute_destination_windowed)
-			else:  df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{window_name}.feather"))
-
 			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dataset_structure.items()})
 			df = pd.DataFrame(summarized_data,columns=df.columns.tolist())
-			
-			if not verbose: df.to_feather(os.path.join(path_destination_summarized_window,f"{window_name}.feather"))
-			else: df.to_feather(path_absolute_destination_summarized_window)
+			df_evaluate.to_feather(os.path.join(path_destination_windowed,f"{window_name}.feather"))
+			df.to_feather(os.path.join(path_destination_summarized_window,f"{window_name}.feather"))
 
 			print(f"destination path: {path_destination_summarized_window}")
 	except Exception as error:
