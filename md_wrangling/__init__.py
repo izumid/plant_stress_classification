@@ -214,7 +214,7 @@ def window_approved(sample_class_size,window_size,window_size_limit,window_sampl
 
 
 # MARK: Win. Shape
-def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sample_size_limit=10,reverse=True,sample_unique_length=None,balanced=True,show_debug_message=False):
+def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sample_size_limit=10,reverse=True,sample_unique_length=None,balanced=True,test=False,show_debug_message=False):
 	"""
 		Description:
 
@@ -243,7 +243,7 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 
 		window.sort(key=lambda x: x[0], reverse=reverse)
 		
-		if show_debug_message: window = [min(window, key=lambda x: x[0])]
+		if test: window = [min(window, key=lambda x: x[0])]
 		stimulus_window[f"all_stimuli_length({sample_class_size})"] = window
 
 	else:
@@ -278,7 +278,7 @@ def window_shape(sample_class_size,start=1,step=1,window_size_limit=10,window_sa
 				sample_window_size  = stimulus_sample / sample_size
 				if sample_window_size.is_integer(): window.append([int(sample_window_size),sample_size])
 
-			if show_debug_message: window = [min(window, key=lambda x: x[0])]
+			if test: window = [min(window, key=lambda x: x[0])]
 
 			window.sort(reverse=True)
 			found_keys = [key for key, value in sample_unique_length.items() if value == stimulus_sample]
@@ -309,6 +309,8 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 					
 			first_key_value = next(iter(window.values()))
 
+			ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
+
 			for i in range(len(first_key_value)):
 				fixed_window_data = []
 				summarized_data = []
@@ -317,6 +319,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 				window_name=""
 
 				for filename in os.listdir(path_origin):	
+					
 					if unique_data and not balanced_sample:
 						idx_last_underscore = filename[::-1].index('_')+1
 						key_name_search = filename[:-idx_last_underscore]
@@ -329,6 +332,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 						window_current = window[key_name_search][i]
 						window_size = window_current[0]
 						window_sample_size = window_current[1]
+						
 					else:
 						first_key = next(iter(window))
 						window_current = window[first_key][i]
@@ -336,8 +340,6 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 						window_sample_size = window_current[1]
 
 					#window_name = f"{str(window_size)}x{str(window_sample_size)}"				
-					ut.debug(message=f"[Fixed Window Dataset] data origin: {path_origin}",show=show_debug_message)
-					ut.debug(message=f"[Fixed Window Dataset] File: {window_name}",show=show_debug_message)
 
 					stimulus_stage = os.path.splitext(filename)[0]
 					stimulus_value = np.load(os.path.join(path_origin,filename))
@@ -351,7 +353,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 						window_data = np.array(stimulus_value[index_start:index_end])
 						window_data_length = len(window_data)
 
-						ut.debug(message=f"[Fixed Window Dataset] File {filename} length({stimulus_total_sample_length}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
+						#ut.debug(message=f"[Fixed Window Dataset] File {filename} length({stimulus_total_sample_length}). Summarizing window[{index_start}:{index_end}]",show=show_debug_message)
 						
 						fixed_window_data.append([stimulus_stage,stimulus_total_sample_length/window_data_length,window_data_length,window_data])
 						summarized_data.append(
@@ -370,8 +372,8 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 					window_total_total_sample_size = window_sample_size
 
 				window_name = f"{str(window_total_size)}x{str(window_total_total_sample_size)}"
-				#print(f"new window name: {window_name}")
-				
+				ut.debug(message=f"[Fixed Window Dataset] Window: {window_name}",show=show_debug_message)
+							
 				struct_evaluate = {"applied_stimulus": "category","window_length": "int", "window_sample_length": "int", "window_data": "object"}
 				df_evaluate = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in struct_evaluate.items()})
 				df_evaluate = pd.DataFrame(fixed_window_data,columns=df_evaluate.columns.to_list())

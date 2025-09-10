@@ -74,6 +74,7 @@ def main():
 	random_state = config["random_state"]
 	show_debug_message = config["show_debug_message"]
 	dataset_structure = config["dataset_structure"]
+	test = config["test"]
 
 	#wr.stimulus_subsampling(path_destination=path_subsampled,path_origin=path_parent_root,random_state=random_state,sample_size=sample_size)
 
@@ -81,7 +82,7 @@ def main():
 		if balanced_sample:
 			print("3th Experiment")
 			unique_data_sample_length = int(config["unique_sample_size"] / observation_size)  #stimuli number (3) * classes: event & non event (2) = 6
-			window = wr.window_shape(sample_class_size=unique_data_sample_length,show_debug_message=show_debug_message)
+			window = wr.window_shape(sample_class_size=unique_data_sample_length,test=test,show_debug_message=show_debug_message)
 			
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\01_balanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\01_balanced")
@@ -92,7 +93,7 @@ def main():
 			print("2st Experiment")
 			unique_data_sample_length = config["unique_imbalanced_sample_length"]
 			unique_sample_size = sum(unique_data_sample_length.values())
-			window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=unique_data_sample_length,balanced=False,show_debug_message=show_debug_message)
+			window = wr.window_shape(sample_class_size=unique_sample_size,sample_unique_length=unique_data_sample_length,balanced=False,test=test,show_debug_message=show_debug_message)
 
 			path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\02_value_unique\02_imbalanced"))
 			path_experiment_data = os.path.join(path_experiment_data,r"02_value_unique\02_imbalanced")
@@ -102,7 +103,7 @@ def main():
 	else:
 		print("1st Experiment")
 		unique_data_sample_length = None
-		window = wr.window_shape(sample_class_size=config["sample_size"],show_debug_message=show_debug_message)
+		window = wr.window_shape(sample_class_size=config["sample_size"],test=test,show_debug_message=show_debug_message)
 		
 		path_root = os.path.join(os.path.join(os.getcwd(),r"data\custom\01_value_duplicated\01_balanced"))
 		path_experiment_data = os.path.join(path_experiment_data,r"01_value_duplicated\01_balanced")
@@ -224,7 +225,6 @@ def main():
 		df_stimuled = pd.read_feather(os.path.join(path_stimulus_class_splited,"stimuled.feather"))
 		"""
 		
-
 	if config["classify"]:
 		list_classifier = config["list_classifier"]
 		k_fold_split = config["k_fold_split"]
@@ -234,7 +234,6 @@ def main():
 
 		ut.debug(message="path_destination", var=path_result,show=show_debug_message)
 
-		print(path_result,"aAAAAAAAAAAAAAAAAAA")
 		cl.classify(
 			path_origin=path_fixed_window_summarized_dataset
 			,path_destination=path_result
