@@ -6,9 +6,9 @@
 	,"x_size_category": 3
 	,"y_size_class": 2
 	,"y_event_value": 1
-	,"test": true
+	,"test": false
 	,"pre_processing_data": true
-	,"unique_value": true
+	,"unique_value": false
 	,"balanced_sample": true
 	,"classify": false
 	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]

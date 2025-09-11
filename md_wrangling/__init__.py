@@ -355,7 +355,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 					window_sample_size = window_current[1]
 
 					if verbose:
-						window_complete = sum(inner[0] for lists in window.values() for inner in lists)	
+						window_complete = sum(window[key][i][0] for key in window)
 						window_name = f"{window_complete}x{window_sample_size}"
 						ut.debug(message=f"[Fixed Window Dataset] file: {filename}. Imbalanced window {window_size} of {window_complete}, complete window: [{window_name}]",show=show_debug_message)
 				else:
@@ -366,6 +366,7 @@ def fixed_window_dataset(path_destination_windowed,path_destination_summarized_w
 
 					if verbose:
 						window_complete = window_size*len(basefile)
+						#window_complete = len(basefile)/window_size
 						window_name = f"{window_complete}x{window_sample_size}"
 						ut.debug(message=f"[Fixed Window Dataset] file: {filename}. Balanced window {window_size} of {window_complete}, complete window: [{window_name}]",show=show_debug_message)
 				
