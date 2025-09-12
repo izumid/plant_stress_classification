@@ -7,12 +7,13 @@
 	,"y_size_class": 2
 	,"y_event_value": 1
 	,"test": false
-	,"pre_processing_data": true
+	,"pre_processing_data": false
 	,"unique_value": false
 	,"balanced_sample": true
-	,"classify": false
-	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
-	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
+	,"skip_file_exists": true
+	,"classify": true
+	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
+	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
 	,"k_fold_split": 5
 	,"verbose": true
 	,"random_state": 42

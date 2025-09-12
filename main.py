@@ -244,6 +244,7 @@ def main():
 			,random_state = config["random_state"]
 			,verbose = config["verbose"]
 			,k_fold_split = k_fold_split
+			,skip_file_exists = config["skip_file_exists"]
 			#,filename=str(Path(os.path.realpath(__file__)).stem)
 		)
 
@@ -283,9 +284,9 @@ if __name__ == "__main__":
 	try: 
 		main()
 
-		# while True:
-		# 	user_input = input('Type "Abnegation" to exit: ')
-		# 	if user_input == "Abnegation": break
+		while True:
+			user_input = input('Type "Abnegation" to exit: ')
+			if user_input == "Abnegation": break
 
 	except Exception as e: 
 		ut.log_file(filename="log_file",header_message="Error in Main!")

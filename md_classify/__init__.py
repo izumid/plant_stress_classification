@@ -28,20 +28,26 @@ import md_util as ut
 ##########################################################
 
 # MARK: Classify
-def classify(path_origin,path_destination,list_classifier,random_state,verbose,k_fold_split,filename="result"):
+def classify(path_origin,path_destination,list_classifier,random_state,verbose,k_fold_split,skip_file_exists):
 	"""
 		Description:
 
 		Arguments:
 		
 	"""
+	
 	try:
 		int_verbose = int(verbose)
 		scaler = MinMaxScaler()
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
 		rounds = 1
 		file = os.listdir(path_origin)
-		
+
+		if skip_file_exists: 
+			for existing_file in os.listdir(path_destination):
+				path_file_absolute =  os.path.join(path_destination,existing_file)
+				if existing_file in file and os.path.isfile(path_file_absolute): file.remove(existing_file)
+
 		if k_fold_split: 
 			skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
 			total_rounds = len(file)*k_fold_split*len(list_classifier)
@@ -66,10 +72,6 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 			window_size = int(window_size_sample[0])
 			window_sample_size = int(window_size_sample[1])
 
-			path_txt = os.path.join(path_destination,f"{filename}_skfold_{window_size}x{window_sample_size}.txt")
-			if os.path.exists(path_txt): os.remove(path_txt)
-			#with open(path_txt, mode="a") as file: file.write(";".join(map(str, header_txt)) + "\n")
-			#df_train = pd.read_feather(os.path.join(path_origin,folder_window,"dataset.feather"))
 			df_train = pd.read_feather(os.path.join(path_origin,window_filename))
 			print(df_train.head())
 			X_label =  df_train.iloc[:, 0] #df_train["stimulus_stage"]
