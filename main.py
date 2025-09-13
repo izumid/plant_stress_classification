@@ -238,14 +238,14 @@ def main():
 		ut.debug(message="path_destination", var=path_result,show=show_debug_message)
 
 		cl.classify(
-			path_origin=path_fixed_window_summarized_dataset
-			,path_destination=path_result
-			,list_classifier=list_classifier
+			path_origin = path_fixed_window_summarized_dataset
+			,path_destination = path_result
+			,list_classifier = list_classifier
 			,random_state = config["random_state"]
 			,verbose = config["verbose"]
 			,k_fold_split = k_fold_split
 			,skip_file_exists = config["skip_file_exists"]
-			#,filename=str(Path(os.path.realpath(__file__)).stem)
+			,execution_sort_ascending = config["execution_sort_ascending"]
 		)
 
 		#result_feather_read(path_destination=path_result,filename=str(Path(os.path.realpath(__file__)).stem)+"_stratified_kfold")

@@ -10,10 +10,11 @@
 	,"pre_processing_data": false
 	,"unique_value": false
 	,"balanced_sample": true
-	,"skip_file_exists": true
 	,"classify": true
-	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
-	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
+	,"skip_file_exists": true
+	,"execution_sort_ascending": true
+	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
+	,"list_classifier": ["SVM"]
 	,"k_fold_split": 5
 	,"verbose": true
 	,"random_state": 42
