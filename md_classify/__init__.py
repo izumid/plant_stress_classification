@@ -28,7 +28,7 @@ import md_util as ut
 ##########################################################
 
 # MARK: Classify
-def classify(path_origin,path_destination,list_classifier,random_state,verbose,k_fold_split,skip_file_exists,execution_sort_ascending):
+def classify(path_origin,path_destination,list_classifier,random_state,verbose,k_fold_split,skip_file_exists,execution_sort_ascending,window=None,show_debug_message=False):
 	"""
 		Description:
 
@@ -41,17 +41,26 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 		scaler = MinMaxScaler()
 		if not os.path.exists(path_destination): os.makedirs(path_destination)
 		rounds = 1
-		file = os.listdir(path_origin)
+		file = []
+
+		if k_fold_split > 0: 
+			skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
+			total_rounds = len(file)*k_fold_split*len(list_classifier)
+			file = os.listdir(path_origin)
+		else:  
+			window_file = os.listdir(path_origin)
+			first_key_value = next(iter(window.values()))
+			total_rounds = len(first_key_value)*len(list_classifier)
+			
+			for basefile in window_file:
+				window_size, window_sample_size = Path(basefile).stem.split("x")
+				window_aux = [int(window_size), int(window_sample_size)]
+				if window_aux in first_key_value: file.append(basefile)
 
 		if skip_file_exists: 
 			for existing_file in os.listdir(path_destination):
 				path_file_absolute =  os.path.join(path_destination,existing_file)
 				if existing_file in file and os.path.isfile(path_file_absolute): file.remove(existing_file)
-
-		if k_fold_split: 
-			skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
-			total_rounds = len(file)*k_fold_split*len(list_classifier)
-		else:  total_rounds = len(file)*len(list_classifier)
 
 		dict_column_type = {
 			"model": "str"
@@ -69,10 +78,10 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 			if execution_sort_ascending: sort = sorted(file_window)
 			else: sort = sorted(file_window, key=lambda x: x[0], reverse=True)
 			file = [element[1] for element in sort]
-
-		print(file,len(file),total_rounds)
 		
+		train_test_execution = 1
 		for window_filename in file:
+					
 			window_name = Path(window_filename).stem
 			window_size_sample = window_name.split('x')
 			window_size = int(window_size_sample[0])
@@ -86,6 +95,7 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 			result = []
 
 			for model in list_classifier:
+				
 				if not (model != "DT" and model != "XGB" and model != "RF"): 
 					min_samples_leaf = int((window_sample_size * 0.8) *0.1)
 					min_samples_split = int(min_samples_leaf*0.1)
@@ -102,13 +112,11 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 					case "RF": classifier = RandomForestClassifier(random_state=random_state,verbose=int_verbose,criterion="gini",min_samples_split=min_samples_split,max_depth=max_depth,min_samples_leaf=min_samples_leaf,n_estimators=1000)
 					case "MLP": classifier = MLPClassifier(random_state=random_state,verbose=verbose,solver="adam",activation="logistic",max_iter=1000,hidden_layer_sizes=(1,2))
 					case "SVM": classifier = svm.SVC(random_state=random_state,verbose=verbose,probability=False,C=1.0, kernel='rbf',degree=3,gamma='scale',coef0=0.0,shrinking=True,tol=0.001,cache_size=200,class_weight=None,max_iter=-1,decision_function_shape='ovr', break_ties=False)
-				
 
 				if k_fold_split:
-					print("Stratified K Fold")
 					execution = 1
 					for train_index, test_index in skf.split(X, X_label):
-						print(f"Model: {model}({window_filename}). Cross validation fold[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
+						ut.debug(message=f"Model: {model}({window_filename}). Cross validation fold[{execution}] ({(rounds/total_rounds)*100:.2f}%)",show=show_debug_message)
 
 						X_train, X_test = X.iloc[train_index], X.iloc[test_index]
 						y_train, y_test = y.iloc[train_index], y.iloc[test_index]
@@ -137,11 +145,10 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 						rounds+=1
 						execution+=1
 				else:
-					print("Train Test Split")
-					execution = 1
+					
 					X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,shuffle=True,random_state=random_state)
 				
-					print(f"Model: {model}({window_filename}). Train Test execution[{execution}] ({(rounds/total_rounds)*100:.2f}%)")
+					ut.debug(message=f"Model: {model}({window_filename}). Train Test execution[{train_test_execution}] ({(rounds/total_rounds)*100:.2f}%)", show=show_debug_message)
 
 					X_train_scaled = scaler.fit_transform(X_train)
 					X_test_scaled = scaler.transform(X_test)
@@ -164,7 +171,7 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 
 					result.append(data)
 					rounds+=1
-					execution+=1
+					train_test_execution+=1
 
 			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_column_type.items()})
 			df = pd.DataFrame(result,columns=df.columns.tolist())
