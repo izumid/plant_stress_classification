@@ -45,8 +45,8 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 
 		if k_fold_split > 0: 
 			skf = StratifiedKFold(n_splits=k_fold_split,shuffle=True,random_state=random_state)
-			total_rounds = len(file)*k_fold_split*len(list_classifier)
 			file = os.listdir(path_origin)
+			total_rounds = len(file)*k_fold_split*len(list_classifier)
 		else:  
 			window_file = os.listdir(path_origin)
 			first_key_value = next(iter(window.values()))

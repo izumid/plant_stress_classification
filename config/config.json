@@ -13,9 +13,9 @@
 	,"classify": true
 	,"skip_file_exists": true
 	,"execution_sort_ascending": true
-	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
+	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
 	,"list_classifier": ["SVM"]
-	,"k_fold_split": 0
+	,"k_fold_split": 5
 	,"verbose": true
 	,"random_state": 42
 	,"show_debug_message": true
