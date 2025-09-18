@@ -11,8 +11,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-from scipy.stats import shapiro
-from statstests.tests import shapiro_francia
+
 #from statsmodels.discrete.count_model import ZeroInflatedNegativeBinomialP,ZeroInflatedPoisson
 #from statsmodels.discrete.discrete_model import NegativeBinomial, Poisson
 
@@ -21,8 +20,6 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 import md_util as ut
 
-#pd.set_option('display.max_columns', None)  # Display all columns
-#pd.set_option('display.max_rows', None)     # Display all rows
 
 def read_config(path_absolute):
 	"""
@@ -40,6 +37,13 @@ def read_config(path_absolute):
 
 
 def dataset_info(path_origin):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
 
 	for file in os.listdir(path_origin):
 		abs_path = os.path.join(path_origin,file)
@@ -58,6 +62,13 @@ def dataset_info(path_origin):
 
 # MARK: Data Gather
 def read_add_column(path_absolute):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
 	try:
 		dataframe = pd.read_feather(path_absolute)
 		column_name = "experiment"
@@ -82,6 +93,14 @@ def read_add_column(path_absolute):
 
 #def join_result_data(path_result_data,config):
 def join_result_data(path_experiment,dataset_structure,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+	
 	try:
 		result_set = []
 
@@ -111,6 +130,14 @@ def join_result_data(path_experiment,dataset_structure,path_destination):
 
 #MARK: Premisse
 def dataset_premisse(path_origin,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+
 	try:
 		dataframe = pd.read_feather(os.path.join(path_origin,"01_all_experiment_data.feather"))
 
@@ -126,6 +153,14 @@ def dataset_premisse(path_origin,path_destination):
 
 
 def valid_window(path_absolute_origin,path_absolute_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+
 	df = pd.read_feather(path_absolute_origin)
 	df = df.query("model != 'DUM'").copy()
 
@@ -147,6 +182,14 @@ def valid_window(path_absolute_origin,path_absolute_destination):
 
 # MARK: Data Group
 def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_by,sort_ascending):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+	
 	agg_dict = {
 		"accuracy_train": "mean"
 		,"accuracy_test": "mean"
@@ -173,6 +216,13 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 
 
 def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_select):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
 	df = pd.read_feather(path_origin_absolute)
 	df = df[column_select]
 	df["total"] = 1
@@ -200,9 +250,19 @@ def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_sel
 	df.sort_values(["experiment", "order"], inplace=True)
 	df.to_feather(path_destination_absolute)
 
-# MARK: Chart Experiment
-def chart(path_origin_absolute):
-	
+
+# MARK: Chart Experiment Behaviour
+def chart_experiment_behaviour(path_origin_absolute,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+
 	translate = {
 		"train_acc_ten_above": "Treino Acima Teste"
 		,"train_test_hundred": "Treino & Teste 100%"
@@ -288,11 +348,21 @@ def chart(path_origin_absolute):
 		frame.set_edgecolor("#ddd")
 		frame.set_linewidth(1.5)
 
-		plt.savefig(os.path.join(os.getcwd(),rf"z_img\{experiment}_experiment.svg"), format="svg")
+		plt.savefig(os.path.join(path_destination,f"{experiment}_experiment.svg"), format="svg")
 		plt.close()
 
+
 # MARK: Chart Distribution
-def chart_window_valid_distribution(path_dataset,path_img):
+def chart_window_valid_distribution(path_dataset,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+
 	df = pd.read_feather(path_dataset)
 
 	np_array = df["f1_score"]
@@ -321,104 +391,124 @@ def chart_window_valid_distribution(path_dataset,path_img):
 	plt.gca().set_facecolor((0.90,0.93,0.93,0.6)) 
 	#plt.gca().set_facecolor((0.90,0.90,0.98,0.5)) 
 
-	plt.savefig(os.path.join(path_img,"valid_window_result_distribution.png"), dpi=300, format="png", bbox_inches="tight")
-	plt.savefig(os.path.join(path_img,"valid_window_result_distribution.svg"), format="svg", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination,"valid_window_result_distribution.png"), dpi=300, format="png", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination,"valid_window_result_distribution.svg"), format="svg", bbox_inches="tight")
 	
 	plt.close()
 
-def test_message(p_value,alpha,h0_greater):
+
+#MARK: Chart F1 Score Valid Window
+def chart_window_valid_f1score(path_dataset,path_destination):
 	"""
 		Description:
-			Returns a message reporting the probability that the current data is consistent with the assumption of normality. 
-		Arguments:
-			p_value(float):
-			alpha(float):
-			h0_greater(boolean): Inverts the default hypothesis test messaging: 
-				If p_value > alpha, outputs the “reject H₀” message; otherwise, outputs the “fail to reject H₀” message.
-	"""
-
-	if h0_greater:
-		if p_value > alpha: 
-			message = "No strong evidence against normality (probably is normally distributed)"
-		else: 
-			message = "High probability of non-normal distribution"
-	else:
-		if p_value > alpha: 
-			message = "High probability of non-normal distribution"
-		else: 
-			message = "No strong evidence against normality (probably is normally distributed)"
 			
-	return message
+		Arguments:
 
 
-# MARK: Norm. Dist. Test
-def test_normal_distribution(path_dataset,path_destination,alpha=0.05):
+	"""
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+	
 	df = pd.read_feather(path_dataset)
-	result = {}
-	np_array = df["f1_score"]
-	np_array = np.array(np_array, dtype=float)
-	
-	statistic, p_value = shapiro(np_array)
-	result["Shapiro-Wilk"] = {"Statistic": statistic, "p-value": p_value, "message":  test_message(p_value=p_value,alpha=alpha,h0_greater=True)}
-	
-	sf = shapiro_francia(np_array)
-	message = test_message(p_value=sf["p-value"],alpha=alpha,h0_greater=True)
-	sf["message"] = message
-	result["Shapiro-Francia"] = sf
-	
-	with open(os.path.join(path_destination,"test_normal_distribution.json"), "w", encoding="utf-8") as file_result:
-		json.dump(result, file_result, ensure_ascii=False, indent=4)
+	df.query("invalid_window == 0 and f1_score > 70", inplace=True)
+	df.sort_values(by=["experiment","f1_score"],ascending=[True,False],inplace=True)
+
+	path_absolute = os.path.join(path_destination,"valid_window_f1_score.svg")
+	sns.set_style("darkgrid")
+
+	g = sns.catplot(
+		data=df,
+		x='f1_score', y='window',
+		hue='window',
+		col='experiment',
+		kind='bar',
+		col_wrap=2,
+		height=4,
+		aspect=1.5,
+		palette="viridis",
+		sharey=False
+		#sharex=False
+	)
+
+	g.set_titles("Experimento: {col_name}")
+	g.set_axis_labels("Janela [MxN]", "F1-Score")
+	plt.tight_layout()
+
+	for ax in g.axes.flatten():
+		for container in ax.containers:
+			# Custom formatting function
+			def custom_formatter(x):
+				return f'{x:.2f}'.replace('.', ',')
+
+			ax.bar_label(container, labels=[custom_formatter(bar.get_width()) for bar in container],
+						label_type='edge', padding=4, fontsize=9)
+
+		ax.tick_params(axis='x', labelsize=9)
+		ax.set_xlim(left=50)
 
 
-def main():
-	path_experiment = [
-		r"data\03_experiment_result\01_value_duplicated\01_balanced\01_train_test"
-		,r"data\03_experiment_result\01_value_duplicated\01_balanced\02_k_fold\another_model"
-		,r"data\03_experiment_result\01_value_duplicated\01_balanced\02_k_fold\svm_partial"
-		,r"data\03_experiment_result\02_value_unique\01_balanced"
-		,r"data\03_experiment_result\02_value_unique\02_imbalanced"
-	]
-	#config = read_config(path_absolute=os.path.join(os.getcwd(),r"config\config.json"))
+	#plt.show()
+	plt.savefig(path_absolute,dpi='figure')
 
-	dataset_structure = {
-		"experiment": "int64"
-		,"model": "category"
-		,"window": "int64"
-		,"samples_summarized": "int64"
-		,"accuracy_train": "float64"
-		,"accuracy_test": "float64"
-		,"presicion": "float64"
-		,"recall": "float64"
-		,"f1_score": "float64"
+
+# MARK: Chart Outlier
+def chart_outlier(path_absolute_dataframe,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+			
+	"""
+	
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+
+	pl_viridis = sns.color_palette("viridis", 20)
+	pl_flare = sns.color_palette("flare",20)
+	df = pd.read_feather(path_absolute_dataframe)
+	df.query("invalid_window == 0", inplace=True)
+
+	sns.set_style("darkgrid")
+	# Sample category colors
+	category_colors = {
+		1: pl_flare[5],
+		2: pl_flare[9],
+		3: pl_viridis[8],
+		4: pl_viridis[11],
 	}
-	path_analyses = os.path.join(os.getcwd(),r"data\04_analyses")
 
-	path_valid_window = os.path.join(path_analyses,"02_all_experiment_data_overfitting_premisses.feather")
-	path_grouped_window = os.path.join(path_analyses,"04_grouped_window.feather")
-	path_melted = os.path.join(path_analyses,"melted.feather")
-	path_img = os.path.join(os.getcwd(),"z_img")
+	# Determine number of rows (last row will have a single, full-width plot)
+	#n_rows = (len(unique_experiments) - 1) // 2 + 1
 
-	join_result_data(path_experiment=path_experiment,dataset_structure=dataset_structure,path_destination=path_analyses)
-	dataset_premisse(path_origin=path_analyses,path_destination=path_analyses)
-	valid_window(path_absolute_origin=path_valid_window,path_absolute_destination=os.path.join(path_analyses,"03_valid_window.feather"))
+	fig, axes = plt.subplots(1, 3, figsize=(9, 4), sharex=False)
+	axes = axes.flatten()
+	unique_experiment = df["experiment"].unique()
 	
-	group_data(
-		path_absolute_origin=path_valid_window
-		,path_absolute_destination=path_grouped_window
-		,column_drop=["model"]
-		,group_by=["experiment","window","samples_summarized"]
-		,sort_ascending=[True, False, True]
-	)
-	
-	melt_data_to_chart(
-		path_origin_absolute=path_grouped_window
-		,path_destination_absolute=path_melted
-		,column_select=["experiment","train_acc_ten_above","train_test_hundred","f1_hundred","invalid_window"]
-	)
-	
-	chart(path_origin_absolute=path_melted)
-	chart_window_valid_distribution(path_dataset=path_grouped_window,path_img=path_img)
-	test_normal_distribution(path_dataset=path_grouped_window,path_destination=path_analyses)
-	dataset_info(path_analyses)
+	# Iterate through experiments and plot
+	ax_position = 0
+	for experiment in unique_experiment:
+		subset = df[df["experiment"] == experiment]	
+		ax = axes[ax_position]
 
-if __name__ == '__main__': main()
+		boxplot = sns.boxplot(x="experiment", y="f1_score", data=subset, ax=ax, patch_artist=True)
+		for patch in boxplot.patches:
+			patch.set_facecolor(category_colors[experiment])
+			patch.set_alpha(0.5)  # Ensure partial opacity for better contrast
+			
+		ax.set_xticklabels([])
+		#ax.set_xticklabels(["Média F1-Score"], fontsize=8)
+		
+		ax.set_xlabel(f"Experimento: {experiment}", fontsize=10, alpha=0.8)
+		ax.set_ylabel("Média F1-Score", fontsize=10, alpha=0.8, labelpad=9)
+
+		# Ensure consistent facecolor across resized section
+		ax.set_facecolor((0.90, 0.93, 0.93, 0.6))
+		
+		ax_position+=1
+		
+	# Adjust layout and spacing
+	fig.tight_layout()
+	fig.subplots_adjust(top=0.9, hspace=0.4)  # Top margin & vertical spacing
+
+	plt.savefig(os.path.join(path_destination, "outliers_analyses.png"), dpi=300, format="png", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination, "outliers_analyses.svg"), format="svg", bbox_inches="tight")
+
+	plt.close()
