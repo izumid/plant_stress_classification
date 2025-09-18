@@ -326,22 +326,48 @@ def chart_window_valid_distribution(path_dataset,path_img):
 	
 	plt.close()
 
-# MARK: Wilk's Test
+def test_message(p_value,alpha,h0_greater):
+	"""
+		Description:
+			Returns a message reporting the probability that the current data is consistent with the assumption of normality. 
+		Arguments:
+			p_value(float):
+			alpha(float):
+			h0_greater(boolean): Inverts the default hypothesis test messaging: 
+				If p_value > alpha, outputs the “reject H₀” message; otherwise, outputs the “fail to reject H₀” message.
+	"""
+
+	if h0_greater:
+		if p_value > alpha: 
+			message = "No strong evidence against normality (probably is normally distributed)"
+		else: 
+			message = "High probability of non-normal distribution"
+	else:
+		if p_value > alpha: 
+			message = "High probability of non-normal distribution"
+		else: 
+			message = "No strong evidence against normality (probably is normally distributed)"
+			
+	return message
+
+
+# MARK: Norm. Dist. Test
 def test_normal_distribution(path_dataset,path_destination,alpha=0.05):
 	df = pd.read_feather(path_dataset)
-
+	result = {}
 	np_array = df["f1_score"]
 	np_array = np.array(np_array, dtype=float)
 	
 	statistic, p_value = shapiro(np_array)
-	if p_value > alpha: 
-		message = "No strong evidence against normality (probably is normally distributed)"
-	else: 
-		message = "High probability of non-normal distribution"
-	result = f"[Shapiro-Wilk Test] Statistic: {statistic}; \r\n P-Value: {p_value}; \r\n Distribution: {message};"
-
-	with open(os.path.join(path_destination,"test_normal_distribution.txt"),'w', encoding="utf-8") as file_result:
-		file_result.write(result)
+	result["Shapiro-Wilk"] = {"Statistic": statistic, "p-value": p_value, "message":  test_message(p_value=p_value,alpha=alpha,h0_greater=True)}
+	
+	sf = shapiro_francia(np_array)
+	message = test_message(p_value=sf["p-value"],alpha=alpha,h0_greater=True)
+	sf["message"] = message
+	result["Shapiro-Francia"] = sf
+	
+	with open(os.path.join(path_destination,"test_normal_distribution.json"), "w", encoding="utf-8") as file_result:
+		json.dump(result, file_result, ensure_ascii=False, indent=4)
 
 
 def main():
