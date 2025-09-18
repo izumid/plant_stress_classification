@@ -8,7 +8,7 @@ set "PYINSTALLER_CONFIG_DIR=%output_folder%"
 echo Enviroment path: %path_env%
 
 CALL "%path_env%\activate"
-CALL "%path_env%\python" -m PyInstaller  ^
+CALL "%path_env%\python.exe" -m PyInstaller  ^
 	--clean ^
     --onefile ^
 	--hidden-import=xgboost ^

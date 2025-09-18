@@ -11,6 +11,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+from scipy.stats import shapiro
+from statstests.tests import shapiro_francia
+#from statsmodels.discrete.count_model import ZeroInflatedNegativeBinomialP,ZeroInflatedPoisson
+#from statsmodels.discrete.discrete_model import NegativeBinomial, Poisson
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
@@ -195,7 +200,7 @@ def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_sel
 	df.sort_values(["experiment", "order"], inplace=True)
 	df.to_feather(path_destination_absolute)
 
-
+# MARK: Chart Experiment
 def chart(path_origin_absolute):
 	
 	translate = {
@@ -286,7 +291,7 @@ def chart(path_origin_absolute):
 		plt.savefig(os.path.join(os.getcwd(),rf"z_img\{experiment}_experiment.svg"), format="svg")
 		plt.close()
 
-
+# MARK: Chart Distribution
 def chart_window_valid_distribution(path_dataset,path_img):
 	df = pd.read_feather(path_dataset)
 
@@ -321,8 +326,22 @@ def chart_window_valid_distribution(path_dataset,path_img):
 	
 	plt.close()
 
+# MARK: Wilk's Test
+def test_normal_distribution(path_dataset,path_destination,alpha=0.05):
+	df = pd.read_feather(path_dataset)
 
+	np_array = df["f1_score"]
+	np_array = np.array(np_array, dtype=float)
+	
+	statistic, p_value = shapiro(np_array)
+	if p_value > alpha: 
+		message = "No strong evidence against normality (probably is normally distributed)"
+	else: 
+		message = "High probability of non-normal distribution"
+	result = f"[Shapiro-Wilk Test] Statistic: {statistic}; \r\n P-Value: {p_value}; \r\n Distribution: {message};"
 
+	with open(os.path.join(path_destination,"test_normal_distribution.txt"),'w', encoding="utf-8") as file_result:
+		file_result.write(result)
 
 
 def main():
@@ -373,7 +392,7 @@ def main():
 	
 	chart(path_origin_absolute=path_melted)
 	chart_window_valid_distribution(path_dataset=path_grouped_window,path_img=path_img)
-
+	test_normal_distribution(path_dataset=path_grouped_window,path_destination=path_analyses)
 	dataset_info(path_analyses)
 
 if __name__ == '__main__': main()
