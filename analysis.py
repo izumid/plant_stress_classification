@@ -55,7 +55,7 @@ def main():
 	
 	inferenical_analysis.test_normal_distribution(path_dataset=path_grouped_window,path_destination=path_analyses)
 	inferenical_analysis.test_iqr_outlier(path_absolute_dataframe=path_grouped_window,path_destination=path_analyses)
-	inferenical_analysis.test_random_permutation(path_absolute_dataframe=path_grouped_window,n_perm=1000,alpha=0.05,path_destination=path_analyses)
+	inferenical_analysis.test_random_permutation(path_absolute_dataframe=path_grouped_window,n_perm=10_000,alpha=0.05,path_destination=path_analyses)
 
 	data_analysis.dataset_info(path_analyses)
 

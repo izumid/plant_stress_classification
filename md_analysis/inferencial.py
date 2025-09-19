@@ -153,32 +153,40 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0")
-	numpy_array = np.array(df["f1_score"], dtype=float)
-	sorted_data = np.sort(numpy_array)
-	sorted_index = np.argsort(numpy_array)
-	permutated = np.array([np.random.permutation(numpy_array) for _ in range(n_perm)])
-	#expected_value = np.mean(np.sort(permutated, axis=1), axis=0)
+
+	f1_score_old = np.array(df["f1_score"], dtype=float)
+	sorted_data = np.sort(f1_score_old)
+	sorted_index = np.argsort(f1_score_old)
+
+	df.sort_values(by="f1_score", inplace=True)
+	window_name = np.array(df["window"], dtype=str)
+	f1_score = np.array(df["f1_score"], dtype=float) #Already sorted by the previous dataframe sort
+	f1_index_sorted_asc = np.argsort(f1_score)
+	#equals = sorted_data==f1_score
+
+	# print("sorted_data")
+	# print(sorted_data)
+	# print("\r\nf1_score")
+	# print(f1_score)
+	# print(f"same elements and order: {equals}")
+	# print(f"total f1_score true: {np.sum(equals)}, f1_score length {len(equals)}")
+
+	permutated = np.array([np.random.permutation(f1_score) for _ in range(n_perm)])
+	expected_value = np.mean(np.sort(permutated, axis=1), axis=0)
+
 	p_value = []
 	result={}
 
-	for i in range(19):
-		p = np.sum(permutated[:, i] >= sorted_data[i]) / n_perm
+	for i in range(len(f1_score)):
+		p = np.sum(permutated[:, i] >= f1_score[i]) / n_perm
 		p_value.append(p)
 
-	for i in range(19):
+	for i in range(len(f1_score)):
 		if p_value[i] < alpha:
-			idx = sorted_index[i]
-			#result[sorted_data[i]] = {"rank_position": idx, "p-value": p_value[i]}
-			print(f"Value: {sorted_data[i]:.3f}, rank position: {idx}, p-value: {p_value[i]:.4f}")
-
-	
+			idx = f1_index_sorted_asc[i]
+			difference = f1_score[i] - expected_value[i]
+			#print(window_name[i],{"f1_score": f1_score[i],"rank_position": idx, "difference": difference, "p-value": p_value[i]})
+			result[window_name[i]] = {"f1_score": float(f1_score[i]),"rank_position": int(idx), "difference": float(difference), "p-value": float(p_value[i])}
+		
 	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
-
-def main():
-	path_analyses = os.path.join(os.getcwd(),r"data\04_analyses")
-	path_grouped_window = os.path.join(path_analyses,"04_grouped_window.feather")
-	path_image = os.path.join(path_analyses,"image")
-
-if __name__ == "__main__": 
-	main()
