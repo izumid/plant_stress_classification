@@ -203,6 +203,7 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 	}
 
 	df = pd.read_feather(path_absolute_origin)
+	df.query("model != 'DUM'", inplace=True)
 	df.drop(columns=column_drop,inplace=True)
 	df = df.groupby(group_by,as_index=False).agg(agg_dict)
 	df.reset_index(drop=True, inplace=True)
@@ -348,7 +349,7 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination):
 		frame.set_edgecolor("#ddd")
 		frame.set_linewidth(1.5)
 
-		plt.savefig(os.path.join(path_destination,f"{experiment}_experiment.svg"), format="svg")
+		plt.savefig(os.path.join(path_destination,f"{str(experiment).zfill(2)}_experiment.svg"), format="svg")
 		plt.close()
 
 
