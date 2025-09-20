@@ -143,7 +143,7 @@ def test_iqr_outlier(path_absolute_dataframe,path_destination):
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
 
 
-def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destination):
+def test_random_permutation_old(path_absolute_dataframe,n_perm,alpha,path_destination):
 	"""
 		Description:
 			
@@ -153,10 +153,6 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0")
-
-	f1_score_old = np.array(df["f1_score"], dtype=float)
-	sorted_data = np.sort(f1_score_old)
-	sorted_index = np.argsort(f1_score_old)
 
 	df.sort_values(by="f1_score", inplace=True)
 	window_name = np.array(df["window"], dtype=str)
@@ -170,6 +166,7 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 	# print(f1_score)
 	# print(f"same elements and order: {equals}")
 	# print(f"total f1_score true: {np.sum(equals)}, f1_score length {len(equals)}")
+	#print(f"valid f1 window average: {np.mean(f1_score)} \r\n F1 values: {f1_score}")
 
 	permutated = np.array([np.random.permutation(f1_score) for _ in range(n_perm)])
 	expected_value = np.mean(np.sort(permutated, axis=1), axis=0)
@@ -188,5 +185,54 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 			#print(window_name[i],{"f1_score": f1_score[i],"rank_position": idx, "difference": difference, "p-value": p_value[i]})
 			result[window_name[i]] = {"f1_score": float(f1_score[i]),"rank_position": int(idx), "difference": float(difference), "p-value": float(p_value[i])}
 		
+	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
+		json.dump(result, file_result, ensure_ascii=False, indent=4)
+
+
+def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+			
+	"""
+
+	df = pd.read_feather(path_absolute_dataframe)
+	df.query("invalid_window == 0")
+	df.sort_values(by="f1_score", inplace=True)
+
+	window_name = np.array(df["window"], dtype=str)
+	f1_score = np.array(df["f1_score"], dtype=float) #Already sorted by the previous dataframe sort
+	f1_index_sorted_asc = np.argsort(f1_score)
+
+
+	permutated = np.array([np.random.permutation(f1_score) for _ in range(n_perm)])
+	expected_value = np.mean(permutated, axis=0)
+
+	p_value = []
+	result={}
+	
+	#print(f"F1-Score values: {f1_score}")
+
+	for score in f1_score:
+		p = np.sum(permutated >= score) / permutated.size
+		p_value.append(p)
+
+	for i in range(len(f1_score)):
+		if p_value[i] < alpha:
+			idx = f1_index_sorted_asc[i]
+			difference = f1_score[i] - expected_value[i]
+			#print(window_name[i],{"f1_score": f1_score[i],"rank_position": idx, "difference": difference, "p-value": p_value[i]})
+			result[window_name[i]] = {"f1_score": float(f1_score[i]),"rank_position": int(idx), "difference": float(difference), "p-value": float(p_value[i])}
+	
+	if 1==0:
+		for i, p in enumerate(p_value):
+			if p < alpha:
+				diff = f1_score[i] - expected_value[i]
+				print(f"Valor = {f1_score[i]:.3f} (posição {i}), "
+					f"esperado = {expected_value[i]:.3f}, "
+					f"diferença = {diff:.3f}, "
+					f"p = {p:.4f}")
+
 	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, ensure_ascii=False, indent=4)

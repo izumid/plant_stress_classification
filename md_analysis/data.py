@@ -139,20 +139,35 @@ def dataset_premisse(path_origin,path_destination):
 	"""
 
 	try:
-		dataframe = pd.read_feather(os.path.join(path_origin,"01_all_experiment_data.feather"))
+		df = pd.read_feather(os.path.join(path_origin,"01_all_experiment_data.feather"))
 
-		dataframe["train_acc_ten_above"] = (dataframe["accuracy_train"] >= dataframe["accuracy_test"] * 1.10 ).astype(int)
-		#dataframe["train_acc_ten_above"] = (dataframe["accuracy_train"] >= dataframe["accuracy_test"] * 1.10 and dataframe["accuracy_train"] <= dataframe["accuracy_test"] * 0.9).astype(int) #avoiding under and over fitting
-		dataframe["train_test_hundred"] = ((dataframe["accuracy_train"] == 100) & (dataframe["accuracy_test"] == 100)).astype(int)
-		dataframe["f1_hundred"] =  (dataframe["f1_score"] == 100).astype(int)
-		dataframe["invalid_window"] = ((dataframe["train_acc_ten_above"] == 1) | (dataframe["train_test_hundred"] == 1) | (dataframe["f1_hundred"] == 1)).astype(int)
-		
-		dataframe.to_feather(os.path.join(path_destination,"02_all_experiment_data_overfitting_premisses.feather"))
+		df["train_acc_ten_above"] = ((df["accuracy_train"] >= df["accuracy_test"] * 1.10 ) | (df["accuracy_train"] <= df["accuracy_test"] * 0.9)).astype(int) #avoiding under and over fitting
+		df["train_test_hundred"] = ((df["accuracy_train"] == 100) & (df["accuracy_test"] == 100)).astype(int)
+		df["f1_hundred"] =  (df["f1_score"] == 100).astype(int)
+		df["below_dummy"] = 0
+		model_name = list(df["model"].unique())
+		model_name.remove("DUM")
+
+		for experiment in list(df["experiment"].unique()):
+			for model in model_name:
+				for window in list(df["window"].unique()):
+					minimum_limit = df.query("experiment == @experiment and model == 'DUM' and window == @window")["f1_score"].max()	
+					condition = (
+						(df["experiment"] == experiment) &
+						(df["model"] == model) &
+						(df["window"] ==  window) &
+						(df["f1_score"] <= minimum_limit)
+					)
+					df.loc[condition, "below_dummy"] = 1
+
+		df["invalid_window"] = ((df["train_acc_ten_above"] == 1) | (df["train_test_hundred"] == 1) | (df["f1_hundred"] == 1) | (df["below_dummy"] == 1)).astype(int)
+
+		df.to_feather(os.path.join(path_destination,"02_all_experiment_data_overfitting_premisses.feather"))
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="[Window] premisse_dataset")
 
 
-def valid_window(path_absolute_origin,path_absolute_destination):
+def valid_window_tag(path_absolute_origin,path_absolute_destination):
 	"""
 		Description:
 			
@@ -163,16 +178,17 @@ def valid_window(path_absolute_origin,path_absolute_destination):
 
 	df = pd.read_feather(path_absolute_origin)
 	df = df.query("model != 'DUM'").copy()
+	category_until = 3
 
 	df.drop(columns=df.columns.tolist()[df.columns.get_loc("accuracy_train"):df.columns.get_loc("train_acc_ten_above")], inplace=True)
 	df.drop(columns=["model"], inplace=True)
-	df = df.groupby(df.columns.to_list()[:3],as_index=False).sum()
+	df = df.groupby(df.columns.to_list()[:category_until],as_index=False).sum()
 
-	for col in (df.columns.to_list())[-4:]:
+	for col in (df.columns.to_list())[category_until:]:
 		df[col] = df[col].apply(lambda x: 1 if x != 0 else x)
 
 	df.insert(
-		loc=6,
+		loc=len(df.columns) - 1,
 		column="valid_window",
 		value=df["invalid_window"].apply(lambda x: 1 if x == 0 else 0)
 	)
@@ -181,7 +197,7 @@ def valid_window(path_absolute_origin,path_absolute_destination):
 
 
 # MARK: Data Group
-def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_by,sort_ascending):
+def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_by,type_aggregation,sort_ascending):
 	"""
 		Description:
 			
@@ -190,22 +206,10 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 
 	"""
 	
-	agg_dict = {
-		"accuracy_train": "mean"
-		,"accuracy_test": "mean"
-		,"presicion": "mean"
-		,"recall": "mean"
-		,"f1_score": "mean"
-		,"train_acc_ten_above": "sum"
-		,"train_test_hundred": "sum"
-		,"f1_hundred": "sum"
-		,"invalid_window": "sum"
-	}
-
 	df = pd.read_feather(path_absolute_origin)
 	df.query("model != 'DUM'", inplace=True)
 	df.drop(columns=column_drop,inplace=True)
-	df = df.groupby(group_by,as_index=False).agg(agg_dict)
+	df = df.groupby(group_by,as_index=False).agg(type_aggregation)
 	df.reset_index(drop=True, inplace=True)
 	df.sort_values(by=group_by,ascending=sort_ascending,inplace=True)
 	df.rename(columns={"window": "window_size"}, inplace=True)
@@ -216,7 +220,7 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 	df.to_feather(path_absolute_destination)
 
 
-def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_select):
+def melt_data(path_origin_absolute,label_order,path_destination_absolute,column_select):
 	"""
 		Description:
 			
@@ -236,16 +240,7 @@ def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_sel
 	
 	df = df.melt(id_vars=["experiment"], var_name='premisses', value_name='quantity')
 
-	category_to_order = {
-		"train_acc_ten_above": 1
-		,"train_test_hundred": 2
-		,"f1_hundred": 3
-		,"valid_window": 4 
-		,"invalid_window": 5 
-		,"total": 6
-	}
-	df["order"] = df["premisses"].map(category_to_order)
-
+	df["order"] = df["premisses"].map(label_order)
 
 	df.rename(columns={"level_1": "premisses", 0: "quantity"},inplace=True)
 	df.sort_values(["experiment", "order"], inplace=True)
@@ -253,7 +248,7 @@ def melt_data_to_chart(path_origin_absolute,path_destination_absolute,column_sel
 
 
 # MARK: Chart Experiment Behaviour
-def chart_experiment_behaviour(path_origin_absolute,path_destination):
+def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_name):
 	"""
 		Description:
 			
@@ -264,16 +259,8 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination):
 
 	if not os.path.exists(path_destination): os.makedirs(path_destination)
 
-	translate = {
-		"train_acc_ten_above": "Treino Acima Teste"
-		,"train_test_hundred": "Treino & Teste 100%"
-		,"f1_hundred": "F1 100%" 
-		,"valid_window": "Janelas Válidas"
-		,"invalid_window": "Janelas Invalidas" 
-		,"total": "Total"
-	}
 	df = pd.read_feather(path_origin_absolute)
-	df["premisses"] = df['premisses'].map(translate)
+	df["premisses"] = df['premisses'].map(new_label_name)
 
 	experiment_unique = df["experiment"].unique()
 
@@ -466,6 +453,7 @@ def chart_outlier(path_absolute_dataframe,path_destination):
 	pl_flare = sns.color_palette("flare",20)
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0", inplace=True)
+	experiment_valid_window_ammount = len(df["experiment"].unique())
 
 	sns.set_style("darkgrid")
 	# Sample category colors
@@ -479,7 +467,7 @@ def chart_outlier(path_absolute_dataframe,path_destination):
 	# Determine number of rows (last row will have a single, full-width plot)
 	#n_rows = (len(unique_experiments) - 1) // 2 + 1
 
-	fig, axes = plt.subplots(1, 3, figsize=(9, 4), sharex=False)
+	fig, axes = plt.subplots(1, experiment_valid_window_ammount, figsize=(9, 4), sharex=False)
 	axes = axes.flatten()
 	unique_experiment = df["experiment"].unique()
 	
