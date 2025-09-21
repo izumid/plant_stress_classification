@@ -129,7 +129,7 @@ def join_result_data(path_experiment,dataset_structure,path_destination):
 
 
 #MARK: Premisse
-def dataset_premisse(path_origin,path_destination):
+def dataset_premisse(path_origin,path_destination_absolute):
 	"""
 		Description:
 			
@@ -160,14 +160,15 @@ def dataset_premisse(path_origin,path_destination):
 					)
 					df.loc[condition, "below_dummy"] = 1
 
+		#df["valid_window"] = ((df["train_acc_ten_above"] == 0) & (df["train_test_hundred"] == 0) & (df["f1_hundred"] == 0) & (df["below_dummy"] == 0)).astype(int)
 		df["invalid_window"] = ((df["train_acc_ten_above"] == 1) | (df["train_test_hundred"] == 1) | (df["f1_hundred"] == 1) | (df["below_dummy"] == 1)).astype(int)
 
-		df.to_feather(os.path.join(path_destination,"02_all_experiment_data_overfitting_premisses.feather"))
+		df.to_feather(path_destination_absolute)
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="[Window] premisse_dataset")
 
 
-def valid_window_tag(path_absolute_origin,path_absolute_destination):
+def premisse_boolean(path_absolute_origin,path_absolute_destination):
 	"""
 		Description:
 			
@@ -187,11 +188,7 @@ def valid_window_tag(path_absolute_origin,path_absolute_destination):
 	for col in (df.columns.to_list())[category_until:]:
 		df[col] = df[col].apply(lambda x: 1 if x != 0 else x)
 
-	df.insert(
-		loc=len(df.columns) - 1,
-		column="valid_window",
-		value=df["invalid_window"].apply(lambda x: 1 if x == 0 else 0)
-	)
+	df.insert(loc=len(df.columns) - 1, column="valid_window", value=df["invalid_window"].apply(lambda x: 1 if x == 0 else 0))
 
 	df.to_feather(path_absolute_destination)
 
@@ -248,7 +245,7 @@ def melt_data(path_origin_absolute,label_order,path_destination_absolute,column_
 
 
 # MARK: Chart Experiment Behaviour
-def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_name):
+def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_name,premisse):
 	"""
 		Description:
 			
@@ -263,16 +260,32 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 	df["premisses"] = df['premisses'].map(new_label_name)
 
 	experiment_unique = df["experiment"].unique()
-
+	
 	for experiment in experiment_unique:
 
 		df_filtered = df.query("experiment == @experiment").copy()
-
+		premisses_unique = df_filtered["premisses"].unique()
+		
 		sns.set_style("darkgrid")
 		alpha = 0.7
-		# Build plot
+		
+
+		pl_flare = sns.color_palette("flare",20)
+		pl_viridis = sns.color_palette("viridis", 20)
+		palette = []
+		filename_chart = ""
+
+		if premisse: 
+			x_label = premisses_unique[:4]
+			palette = [pl_flare[8],pl_flare[11],pl_flare[14],pl_flare[17]]
+			filename_chart = f"{str(experiment).zfill(2)}_experiment_premisse.svg"
+		else: 
+			x_label = premisses_unique[4:]
+			palette = [pl_viridis[8],pl_flare[14],pl_flare[19]]
+			filename_chart = f"{str(experiment).zfill(2)}_experiment_total.svg"
+
 		g = sns.catplot(
-			data=df_filtered,
+			data=df_filtered[df_filtered["premisses"].isin(x_label)],
 			kind="bar",
 			col="experiment",
 			col_wrap=2,
@@ -281,8 +294,8 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 			sharex=False,
 			hue="premisses",
 			height=4.2,
-			aspect=0.9,
-			palette="viridis",
+			aspect=0.92,
+			palette=palette,
 			alpha=alpha
 		)
 
@@ -291,28 +304,30 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 			for bar in ax.patches:
 				bar.set_width(bar.get_width() * 0.85)
 			ax.set_title("")
-			ax.set_ylabel("Quantidade")
+			ax.set_ylabel("Quantidade de Janelas",fontsize=14)
 			ax.set_ylim(0, 100)
+			ax.set_xlabel(ax.get_xlabel(), fontsize=14)
 
 			for container in ax.containers:
-				ax.bar_label(container, fmt="%.0f", label_type="edge", padding=4, fontsize=9)
+				ax.bar_label(container, fmt="%.0f", label_type="edge", padding=4, fontsize=11) #change that font size to increase data labels
 
-			ax.tick_params(axis="x", labelsize=9)
+			ax.tick_params(axis="x", labelsize=11)
 
 		g.set(xticklabels=[])
-		plt.xlabel("Parâmetros de análise")
-		g.figure.subplots_adjust(right=1.5)
+		if premisse: plt.xlabel("Parâmetros de análise", labelpad=15)
+		else:  plt.xlabel("Resultados Gerais", labelpad=15)
+		g.figure.subplots_adjust(right=1.43) #adjust "chart" wight
 
 		# Remove Seaborn’s default legend (doesn't handle styling well)
 		g._legend.remove()
 
 		# Create a new legend manually
-		unique_labels = df_filtered["premisses"].unique()
-		palette = sns.color_palette("viridis", n_colors=len(unique_labels))
+		#unique_labels = df_filtered["premisses"].unique()
+		legend_palette = sns.color_palette(palette, n_colors=len(x_label))
 
 		legend_handles = [
-			Patch(facecolor=palette[i], edgecolor='black', label=str(label), alpha=alpha-0.15)
-			for i, label in enumerate(unique_labels)
+			Patch(facecolor=legend_palette[i], edgecolor='black', label=str(label), alpha=alpha-0.15)
+			for i, label in enumerate(x_label)
 		]
 
 		# Add custom legend
@@ -321,22 +336,137 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 		#	0.5 centers it vertically
 		legend = g.figure.legend(
 			handles=legend_handles,
-			title="Premissas",
+			title="Legenda",
 			loc="center right",
-			bbox_to_anchor=(0.965, 0.5), #shifts the box further right beyond the normal bounds (1.0 is fully right-aligned)
+			bbox_to_anchor=(1.01, 0.5), #[0] increase or decrease X position, [1] increase or decrease Y position
 			frameon=True,
-			fontsize=9,
-			title_fontsize=12,
+			title_fontsize=14,
+			prop={'size': 14}
 		)
+		
+		for text in legend.get_texts():
+			text.set_fontsize(12)
 
 		# Style it properly
 		plt.draw()
 		frame = legend.get_frame()
-		frame.set_facecolor("#eee")
-		frame.set_edgecolor("#ddd")
+		#frame.set_facecolor("#eee")
+		frame.set_edgecolor("#eee")
 		frame.set_linewidth(1.5)
 
-		plt.savefig(os.path.join(path_destination,f"{str(experiment).zfill(2)}_experiment.svg"), format="svg")
+		#plt.gca().set_facecolor((0.90,0.93,0.93,0.6))
+
+		plt.savefig(os.path.join(path_destination,filename_chart), format="svg")
+		plt.close()
+
+
+def chart_experiment_grid(path_origin_absolute, path_destination, new_label_name):
+
+	if not os.path.exists(path_destination):
+		os.makedirs(path_destination)
+
+	df = pd.read_feather(path_origin_absolute)
+	df["premisses"] = df['premisses'].map(new_label_name)
+
+	experiment_unique = df["experiment"].unique()
+	
+	sns.set_style("darkgrid")
+	alpha = 0.7
+
+	pl_viridis = sns.color_palette("viridis", 20)
+	pl_flare = sns.color_palette("flare",20)
+
+	premisses_palette = [pl_flare[8],pl_flare[11],pl_flare[14],pl_flare[17]]
+	total_chart_pallete  = [pl_viridis[8],pl_flare[14],pl_flare[19]]
+
+	for experiment in experiment_unique:
+		df_filtered = df.query("experiment == @experiment").copy()
+
+		# Divide premissas em dois grupos
+		premisses_unique = df_filtered["premisses"].unique()
+		first_group = premisses_unique[:4]
+		second_group = premisses_unique[4:]
+
+		fig, axes = plt.subplots(1, 2, figsize=(13, 4), sharey=False)
+
+		# --- Gráfico da esquerda ---
+		sns.barplot(
+			data=df_filtered[df_filtered["premisses"].isin(first_group)],
+			x="premisses",
+			y="quantity",
+			hue="premisses",
+			palette=premisses_palette,
+			alpha=alpha,
+			ax=axes[0]
+		)
+		axes[0].set_title("Premissas")
+		axes[0].set_ylabel("Quantidade")
+		axes[0].set_xlabel("Parâmetros de análise", labelpad=15)
+		axes[0].set_ylim(0, 100)
+
+		# Adiciona rótulos numéricos
+		for container in axes[0].containers:
+			axes[0].bar_label(container, fmt="%.0f", label_type="edge", padding=3, fontsize=9)
+
+		# --- Gráfico da direita ---
+		sns.barplot(
+			data=df_filtered[df_filtered["premisses"].isin(second_group)],
+			x="premisses",
+			y="quantity",
+			hue="premisses",
+			palette=total_chart_pallete,
+			alpha=alpha,
+			ax=axes[1]
+		)
+		axes[1].set_title("Totais")
+		axes[1].set_ylabel("Quantidade")
+		axes[1].set_xlabel("Resultados Gerais", labelpad=15)
+		axes[1].set_ylim(0, 100)
+
+		# Adiciona rótulos numéricos
+		for container in axes[1].containers:
+			axes[1].bar_label(container, fmt="%.0f", label_type="edge", padding=3, fontsize=9)
+
+		# --- Legenda personalizada ---
+		"""
+		palette = sns.color_palette("viridis", n_colors=len(premisses_unique))
+		
+		legend_handles = [
+			Patch(facecolor=palette[i], edgecolor='black', label=str(label), alpha=alpha-0.15)
+			for i, label in enumerate(premisses_unique)
+		]
+		fig.legend(
+			handles=legend_handles,
+			title="Premissas",
+			loc="center right",
+			bbox_to_anchor=(1.15, 0.5),
+			frameon=True,
+			fontsize=9,
+			title_fontsize=12
+		)
+		"""
+		legend_handles = [
+			Patch(facecolor=cor, edgecolor='black', label=str(label), alpha=alpha-0.15)
+			for cor, label in zip(premisses_palette + total_chart_pallete,
+								list(first_group) + list(second_group))
+		]
+
+		fig.legend(
+			handles=legend_handles,
+			title="Premissas",
+			loc="center right",
+			bbox_to_anchor=(1.15, 0.5),
+			frameon=True,
+			fontsize=9,
+			title_fontsize=12
+		)
+
+		fig.tight_layout()
+		plt.savefig(
+			os.path.join(path_destination, f"{str(experiment).zfill(2)}_experiment.svg"),
+			format="svg",
+			bbox_inches="tight"
+		)
 		plt.close()
 
 
