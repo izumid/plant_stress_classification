@@ -463,7 +463,7 @@ def chart_experiment_grid(path_origin_absolute, path_destination, new_label_name
 
 		fig.tight_layout()
 		plt.savefig(
-			os.path.join(path_destination, f"{str(experiment).zfill(2)}_experiment.svg"),
+			os.path.join(path_destination, f"{str(experiment).zfill(2)}_experiment_grid.svg"),
 			format="svg",
 			bbox_inches="tight"
 		)

@@ -84,6 +84,8 @@ def main():
 	
 	data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=True)
 	data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=False)
+	
+	data_analysis.chart_experiment_grid(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name)
 
 	data_analysis.group_data(
 		path_absolute_origin=path_premisse_frequency
