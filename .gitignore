@@ -8,15 +8,16 @@
 /_check/
 /codes/
 z_img/
-/experiments_data/
+/data/
+/exe_file/
 
 # Ignore subfolders, but not root files
 z_bat/*/
 
 
 # Keep just specific folder
-/experiments_data/
-!/experiments_data/05_analyses
+/data/
+!/data/05_analyses
 
 # Ignore files with extension
 *.cfg

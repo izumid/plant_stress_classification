@@ -1,12 +1,41 @@
 {
-	"_list_window": [[26200,200], [13100,400], [6550,800], [3275,1600], [1310,4000], [200,26200], [400,13100], [800,6550], [1600,3275], [4000,1310]]
-	,"list_window": [[200,26200]]
-	,"pre_processing_data": true
-	,"classify": false
-	,"list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP"]
-	,"k_fold_split": false
-	,"verbose": false
+	"sample_size": 5240000
+	,"unique_sample_size": 21888
+	,"window": {"5240000": [[157200, 200], [78600, 400], [39300, 800], [19650, 1600], [7860, 4000], [1200, 26200], [2400, 13100], [4800, 6550], [9600, 3275], [24000, 1310]]}
+	,"_list_window": []
+	,"x_size_category": 3
+	,"y_size_class": 2
+	,"y_event_value": 1
+	,"test": false
+	,"pre_processing_data": false
+	,"unique_value": false
+	,"balanced_sample": true
+	,"classify": true
+	,"skip_file_exists": true
+	,"execution_sort_ascending": true
+	,"_list_classifier": ["DUM","DT","NB","KNN","XGB","RF","MLP","SVM"]
+	,"list_classifier": ["SVM"]
+	,"k_fold_split": 5
+	,"verbose": true
 	,"random_state": 42
-	,"destination_folder_name": "01_large_duplicated_values"
-	,"debug": true
+	,"show_debug_message": true
+	,"unique_imbalanced_sample_length": {
+		"Cold after": 3600,
+		"Cold before": 3600,
+		"Low light after": 10800,
+		"Low light before":	10800,
+		"Manitol after": 32400,
+		"Manitol before": 32400
+	}
+	,"dataset_structure": {
+		"stimulus_stage": "category"
+		,"mean": "float64"
+		,"inter_quartile_range": "float64"
+		,"variance": "float64"
+		,"standard_deviation": "float64"
+		,"skew": "float64"
+		,"kustosis": "float64"
+		,"applied_stimulus": "int64"
+	}
+	,"event_basefile_therm": "before"
 }
