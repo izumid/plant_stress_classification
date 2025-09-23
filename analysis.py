@@ -29,7 +29,7 @@ def main():
 		,"presicion": "mean"
 		,"recall": "mean"
 		,"f1_score": "mean"
-		,"train_acc_ten_above": "sum"
+		,"train_acc_ten_difference": "sum"
 		,"train_test_hundred": "sum"
 		,"f1_hundred": "sum"
 		,"below_dummy": "sum"
@@ -37,17 +37,17 @@ def main():
 	}
 
 	new_label_name = {
-		"train_acc_ten_above": "Treino Acima Teste"
-		,"train_test_hundred": "Treino & Teste 100%"
-		,"f1_hundred": "F1 100%" 
-		,"below_dummy": "Abaixo Dummy" 
-		,"valid_window": "Janelas Válidas"
-		,"invalid_window": "Janelas Invalidas" 
+		"train_acc_ten_difference": "Acurácia 10% de variação\nentre treino e teste"
+		,"train_test_hundred": "Acurácia 100%\nem treino e teste"
+		,"f1_hundred": "F1-Score 100%" 
+		,"below_dummy": "F1-Score demais modelos\nabaixo do Dummy" 
+		,"valid_window": "Janelas válidas"
+		,"invalid_window": "Janelas invalidas" 
 		,"total": "Total"
 	}
 
 	label_order = {
-		"train_acc_ten_above": 1
+		"train_acc_ten_difference": 1
 		,"train_test_hundred": 2
 		,"f1_hundred": 3
 		,"below_dummy": 4

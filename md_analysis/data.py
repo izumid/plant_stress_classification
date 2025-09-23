@@ -141,7 +141,7 @@ def dataset_premisse(path_origin,path_destination_absolute):
 	try:
 		df = pd.read_feather(os.path.join(path_origin,"01_all_experiment_data.feather"))
 
-		df["train_acc_ten_above"] = ((df["accuracy_train"] >= df["accuracy_test"] * 1.10 ) | (df["accuracy_train"] <= df["accuracy_test"] * 0.9)).astype(int) #avoiding under and over fitting
+		df["train_acc_ten_difference"] = ((df["accuracy_train"] >= df["accuracy_test"] * 1.10 ) | (df["accuracy_train"] <= df["accuracy_test"] * 0.9)).astype(int) #avoiding under and over fitting
 		df["train_test_hundred"] = ((df["accuracy_train"] == 100) & (df["accuracy_test"] == 100)).astype(int)
 		df["f1_hundred"] =  (df["f1_score"] == 100).astype(int)
 		df["below_dummy"] = 0
@@ -160,8 +160,8 @@ def dataset_premisse(path_origin,path_destination_absolute):
 					)
 					df.loc[condition, "below_dummy"] = 1
 
-		#df["valid_window"] = ((df["train_acc_ten_above"] == 0) & (df["train_test_hundred"] == 0) & (df["f1_hundred"] == 0) & (df["below_dummy"] == 0)).astype(int)
-		df["invalid_window"] = ((df["train_acc_ten_above"] == 1) | (df["train_test_hundred"] == 1) | (df["f1_hundred"] == 1) | (df["below_dummy"] == 1)).astype(int)
+		#df["valid_window"] = ((df["train_acc_ten_difference"] == 0) & (df["train_test_hundred"] == 0) & (df["f1_hundred"] == 0) & (df["below_dummy"] == 0)).astype(int)
+		df["invalid_window"] = ((df["train_acc_ten_difference"] == 1) | (df["train_test_hundred"] == 1) | (df["f1_hundred"] == 1) | (df["below_dummy"] == 1)).astype(int)
 
 		df.to_feather(path_destination_absolute)
 	except Exception as error:
@@ -181,7 +181,7 @@ def premisse_boolean(path_absolute_origin,path_absolute_destination):
 	df = df.query("model != 'DUM'").copy()
 	category_until = 3
 
-	df.drop(columns=df.columns.tolist()[df.columns.get_loc("accuracy_train"):df.columns.get_loc("train_acc_ten_above")], inplace=True)
+	df.drop(columns=df.columns.tolist()[df.columns.get_loc("accuracy_train"):df.columns.get_loc("train_acc_ten_difference")], inplace=True)
 	df.drop(columns=["model"], inplace=True)
 	df = df.groupby(df.columns.to_list()[:category_until],as_index=False).sum()
 
@@ -244,8 +244,87 @@ def melt_data(path_origin_absolute,label_order,path_destination_absolute,column_
 	df.to_feather(path_destination_absolute)
 
 
-# MARK: Chart Experiment Behaviour
+
+# MARK: Exp. Behaviour
 def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_name,premisse):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+
+	df = pd.read_feather(path_origin_absolute)
+	df["premisses"] = df['premisses'].map(new_label_name)
+
+	experiment_unique = df["experiment"].unique()
+	
+	for experiment in experiment_unique:
+
+		df_filtered = df.query("experiment == @experiment").copy()
+		premisses_unique = df_filtered["premisses"].unique()
+		
+		sns.set_style("darkgrid")
+		alpha = 0.7
+
+
+		pl_flare = sns.color_palette("flare",20)
+		pl_viridis = sns.color_palette("viridis", 20)
+		palette = []
+		filename_chart = ""
+
+		if premisse: 
+			x_label = premisses_unique[:4]
+			palette = [pl_flare[8],pl_flare[11],pl_flare[14],pl_flare[17]]
+			filename_chart = f"{str(experiment).zfill(2)}_experiment_premisse.svg"
+		else: 
+			x_label = premisses_unique[4:]
+			palette = [pl_viridis[8],pl_flare[14],pl_flare[19]]
+			filename_chart = f"{str(experiment).zfill(2)}_experiment_total.svg"
+		
+		# [fig] The entire canvas — everything in the plot window, including all subplots, titles, legends, etc.
+		# Control overall size, background color, save the whole figure;
+		fig = plt.figure(figsize=(9, 4))
+
+
+		# [ax] A single plotting area inside the figure — where the actual bars, lines, etc. are drawn.
+		# Add labels, set limits, customize ticks, plot data.
+		# directly way to create both fig, ax = plt.subplots(figsize=(8, 5))
+
+		ax = sns.barplot(
+			data=df_filtered[df_filtered["premisses"].isin(x_label)]
+			,x="premisses"
+			,y="quantity"
+			,hue="premisses"
+			,palette=palette
+			,alpha=alpha
+			,width=0.6
+		)
+		
+		ax.set_ylabel("Quantidade de Janelas", fontsize=14)
+		ax.set_ylim(0, 100)
+		ax.tick_params(axis='x', labelsize=11)
+		if premisse: plt.xlabel("Frequência de descumprimento\n (premissas de sob/sobre ajuste)", labelpad=15, fontsize=14)
+		else:  plt.xlabel("Resultados Gerais", labelpad=15, fontsize=14)
+
+		# when use hue each bar is stored in a separate ax.containers entry
+		for container in ax.containers:
+			ax.bar_label(container, label_type="edge", padding=3, fontsize=10)
+
+		plt.savefig(
+			os.path.join(path_destination, filename_chart)
+			,format="svg"
+			,bbox_inches="tight"
+		)
+
+		plt.close()
+
+
+# MARK: Exp. Behaviour Legend
+def chart_experiment_behaviour_legend(path_origin_absolute,path_destination,new_label_name,premisse):
 	"""
 		Description:
 			
@@ -360,6 +439,7 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 		plt.close()
 
 
+#MARK: Exp. Behaviour Grid
 def chart_experiment_grid(path_origin_absolute, path_destination, new_label_name):
 
 	if not os.path.exists(path_destination):
@@ -527,7 +607,8 @@ def chart_window_valid_f1score(path_dataset,path_destination):
 	if not os.path.exists(path_destination): os.makedirs(path_destination)
 	
 	df = pd.read_feather(path_dataset)
-	df.query("invalid_window == 0 and f1_score > 70", inplace=True)
+	#df.query("invalid_window == 0 and f1_score > 70", inplace=True)
+	df.query("invalid_window == 0", inplace=True)
 	df.sort_values(by=["experiment","f1_score"],ascending=[True,False],inplace=True)
 
 	path_absolute = os.path.join(path_destination,"valid_window_f1_score.svg")
