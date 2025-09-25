@@ -68,58 +68,53 @@ def main():
 	path_image = os.path.join(path_analyses,"image")
 	path_premisse_boolean = os.path.join(path_analyses,"03_premisse_boolean.feather")
 
-	if 1 == 0:
-		data_analysis.join_result_data(path_experiment=path_experiment,dataset_structure=dataset_structure,path_destination=path_analyses)
-		data_analysis.dataset_premisse(path_origin=path_analyses,path_destination_absolute=path_premisse_frequency)
-		data_analysis.premisse_boolean(path_absolute_origin=path_premisse_frequency,path_absolute_destination=path_premisse_boolean)
-		
-		data_analysis.melt_data(
-			#path_origin_absolute=path_grouped_window
-			path_origin_absolute=path_premisse_boolean
-			,path_destination_absolute=path_melted
-			,label_order=label_order
-			,column_select=column_select
-		)
-		
-		
-		data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=True)
-		data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=False)
-		
-		data_analysis.chart_experiment_grid(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name)
+	data_analysis.join_result_data(path_experiment=path_experiment,dataset_structure=dataset_structure,path_destination=path_analyses)
+	data_analysis.dataset_premisse(path_origin=path_analyses,path_destination_absolute=path_premisse_frequency)
+	data_analysis.premisse_boolean(path_absolute_origin=path_premisse_frequency,path_absolute_destination=path_premisse_boolean)
+	
+	data_analysis.melt_data(
+		#path_origin_absolute=path_grouped_window
+		path_origin_absolute=path_premisse_boolean
+		,path_destination_absolute=path_melted
+		,label_order=label_order
+		,column_select=column_select
+	)
+	
+	
+	data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=True)
+	data_analysis.chart_experiment_behaviour(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name,premisse=False)
+	
+	data_analysis.chart_experiment_grid(path_origin_absolute=path_melted,path_destination=path_image,new_label_name=new_label_name)
 
-		data_analysis.group_data(
-			path_absolute_origin=path_premisse_frequency
-			,path_absolute_destination=path_grouped_window
-			,column_drop=["model"]
-			,group_by=["experiment","window","samples_summarized"]
-			,type_aggregation=type_aggregation
-			,sort_ascending=[True, False, True]
-		)
-		
-		data_analysis.dataset_info(path_analyses)
-		
-		df = pd.read_feather(path_grouped_window)
-		df.query("invalid_window == 0", inplace=True)
-		f1_series = df["f1_score"].copy()
-		#data_series.sort_values(inplace=True)
-		#print(data_series, len(data_series))
-
-		data_analysis.chart_window_valid_distribution(data_series=f1_series,path_destination=path_image)
-		data_analysis.chart_window_valid_f1score(path_dataset=path_grouped_window,path_destination=path_image)
-		data_analysis.chart_window_valid_f1score(path_dataset=path_grouped_window,path_destination=path_image,single_chart=False)
-		data_analysis.chart_outlier_grid(path_absolute_dataframe=path_grouped_window,path_destination=path_image)
-		data_analysis.chart_outlier(df=df,path_destination=path_image)
-			
-		inferenical_analysis.test_normal_distribution(data_series=f1_series,path_absolute_destination=os.path.join(path_analyses,"test_normal_distribution.json"))
-		inferenical_analysis.test_iqr_outlier(path_absolute_dataframe=path_grouped_window,path_destination=path_analyses)
-		inferenical_analysis.test_random_permutation(path_absolute_dataframe=path_grouped_window,n_perm=10_000,alpha=0.05,path_destination=path_analyses)
-
-		normalized_series,lamb = inferenical_analysis.boxcox_transformation(path_grouped_window,path_destination=path_image)
-		inferenical_analysis.test_normal_distribution(data_series=normalized_series,path_absolute_destination=os.path.join(path_analyses,"boxcox_transformed_data_gaussian_test_dist.json"))
-
+	data_analysis.group_data(
+		path_absolute_origin=path_premisse_frequency
+		,path_absolute_destination=path_grouped_window
+		,column_drop=["model"]
+		,group_by=["experiment","window","samples_summarized"]
+		,type_aggregation=type_aggregation
+		,sort_ascending=[True, False, True]
+	)
+	
+	data_analysis.dataset_info(path_analyses)
+	
 	df = pd.read_feather(path_grouped_window)
 	df.query("invalid_window == 0", inplace=True)
 	f1_series = df["f1_score"].copy()
-	data_analysis.chart_outlier(data_series=f1_series,path_destination=path_image)
+	#data_series.sort_values(inplace=True)
+	#print(data_series, len(data_series))
+
+	data_analysis.chart_window_valid_distribution(data_series=f1_series,path_destination=path_image)
+	data_analysis.chart_window_valid_f1score(path_dataset=path_grouped_window,path_destination=path_image)
+	data_analysis.chart_window_valid_f1score(path_dataset=path_grouped_window,path_destination=path_image,single_chart=False)
+	data_analysis.chart_outlier_grid(path_absolute_dataframe=path_grouped_window,path_destination=path_image)
+	data_analysis.chart_outlier(df=f1_series,path_destination=path_image)
+		
+	inferenical_analysis.test_normal_distribution(data_series=f1_series,path_absolute_destination=os.path.join(path_analyses,"test_normal_distribution.json"))
+	inferenical_analysis.test_iqr_outlier(path_absolute_dataframe=path_grouped_window,path_destination=path_analyses)
+	inferenical_analysis.test_random_permutation(path_absolute_dataframe=path_grouped_window,n_perm=10_000,alpha=0.05,path_destination=path_analyses)
+
+	normalized_series,lamb = inferenical_analysis.boxcox_transformation(path_grouped_window,path_destination=path_image)
+	inferenical_analysis.test_normal_distribution(data_series=normalized_series,path_absolute_destination=os.path.join(path_analyses,"7.3_boxcox_transformed_data_gaussian_test_dist.json"))
+
 if __name__ == '__main__':
 	main()

@@ -86,7 +86,7 @@ def test_iqr_outlier(path_absolute_dataframe,path_destination):
 	result["upper_limit"] = upper_limit
 	result["outliers"] = outliers_iqr
 
-	with open(os.path.join(path_destination,"test_iqr_outlier.json"), "w", encoding="utf-8") as file_result:
+	with open(os.path.join(path_destination,"06_test_iqr_outlier.json"), "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
 
 
@@ -137,7 +137,7 @@ def test_random_permutation_old(path_absolute_dataframe,n_perm,alpha,path_destin
 
 
 # MARK: Random Permutation Test
-def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destination):
+def test_random_permutation(path_absolute_dataframe,permutation_number,alpha,path_destination):
 	"""
 		Description:
 			
@@ -148,42 +148,33 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0")
 	df.sort_values(by="f1_score", inplace=True)
-
+	experiment = np.array(df["experiment"], dtype=str)
 	window_name = np.array(df["window"], dtype=str)
 	f1_score = np.array(df["f1_score"], dtype=float) #Already sorted by the previous dataframe sort
-	f1_index_sorted_asc = np.argsort(f1_score)
-
-
-	permutated = np.array([np.random.permutation(f1_score) for _ in range(n_perm)])
+	
+	permutated = np.array([np.random.permutation(f1_score) for _ in range(permutation_number)])
 	expected_value = np.mean(permutated, axis=0)
-
 	p_value = []
 	result={}
-	
-	#print(f"F1-Score values: {f1_score}")
 
 	for score in f1_score:
 		p = np.sum(permutated >= score) / permutated.size
 		p_value.append(p)
 
-	for i in range(len(f1_score)):
-		if p_value[i] < alpha:
-			idx = f1_index_sorted_asc[i]
+	for i, p_val in enumerate(p_value):
+		if p_val < alpha:
 			difference = f1_score[i] - expected_value[i]
-			#print(window_name[i],{"f1_score": f1_score[i],"rank_position": idx, "difference": difference, "p-value": p_value[i]})
-			result[window_name[i]] = {"f1_score": float(f1_score[i]),"rank_position": int(idx), "difference": float(difference), "p-value": float(p_value[i])}
-	
-	if 1==0:
-		for i, p in enumerate(p_value):
-			if p < alpha:
-				diff = f1_score[i] - expected_value[i]
-				print(f"Valor = {f1_score[i]:.3f} (posição {i}), "
-					f"esperado = {expected_value[i]:.3f}, "
-					f"diferença = {diff:.3f}, "
-					f"p = {p:.4f}")
+
+			result.setdefault(f"{experiment[i].zfill(2)}_experiment_", {})[str(window_name[i])] = {
+				"f1_score": float(f1_score[i]),
+				"rank_position": int(i),
+				"expected_value": float(expected_value[i]),
+				"difference": float(difference),
+				"p_value": float(p_val)
+			}
 
 	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
-		json.dump(result, file_result, ensure_ascii=False, indent=4)
+		json.dump(result, file_result, indent=4)
 
 
 # MARK: Box-Cox Transformation
@@ -199,7 +190,7 @@ def boxcox_transformation(path_absolute_dataframe,path_destination):
 	plt.ylabel("Frequency")
 	plt.title("Histogram of Data")
 	
-	plt.savefig(os.path.join(path_destination, "original_data_series.svg"), format="svg", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination, "7.1_original_data_series.svg"), format="svg", bbox_inches="tight")
 	plt.close()
 
 	plt.hist(normalized_series, bins=8, color="skyblue", edgecolor="black")
@@ -207,7 +198,7 @@ def boxcox_transformation(path_absolute_dataframe,path_destination):
 	plt.ylabel("Frequency")
 	plt.title("Histogram of Data")
 
-	plt.savefig(os.path.join(path_destination, "normalized_series.svg"), format="svg", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination, "7.2_normalized_series.svg"), format="svg", bbox_inches="tight")
 	plt.close()
 
 	return(normalized_series,lamb)
