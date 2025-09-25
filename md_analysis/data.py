@@ -259,7 +259,9 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 
 	df = pd.read_feather(path_origin_absolute)
 	df["premisses"] = df['premisses'].map(new_label_name)
-
+	fontsize_label = 14
+	fontsize_tick_label = fontsize_label-3
+	labelpad=15
 	experiment_unique = df["experiment"].unique()
 	
 	for experiment in experiment_unique:
@@ -304,22 +306,20 @@ def chart_experiment_behaviour(path_origin_absolute,path_destination,new_label_n
 			,width=0.6
 		)
 		
-		ax.set_ylabel("Quantidade de Janelas", fontsize=14)
+		ax.set_ylabel("Quantidade de Janelas", fontsize=fontsize_label)
 		ax.set_ylim(0, 100)
-		ax.tick_params(axis='x', labelsize=11)
-		if premisse: plt.xlabel("Frequência de descumprimento\n (premissas de sob/sobre ajuste)", labelpad=15, fontsize=14)
-		else:  plt.xlabel("Resultados Gerais", labelpad=15, fontsize=14)
 
-		# when use hue each bar is stored in a separate ax.containers entry
+		ax.tick_params(axis='x', labelsize=fontsize_tick_label)
+		ax.tick_params(axis='y', labelsize=fontsize_tick_label)
+
+		if premisse: plt.xlabel("Frequência de descumprimento (premissas de sub/sobreajuste)", labelpad=labelpad, fontsize=fontsize_label)
+		else:  plt.xlabel("Resultados Gerais", labelpad=labelpad, fontsize=fontsize_label)
+
+		# when use hue each bar is stored in a separate ax.containers entry. Insert and change style of data label
 		for container in ax.containers:
-			ax.bar_label(container, label_type="edge", padding=3, fontsize=10)
+			ax.bar_label(container, label_type="edge", padding=3, fontsize=fontsize_tick_label)
 
-		plt.savefig(
-			os.path.join(path_destination, filename_chart)
-			,format="svg"
-			,bbox_inches="tight"
-		)
-
+		plt.savefig(os.path.join(path_destination, filename_chart),format="svg",bbox_inches="tight")
 		plt.close()
 
 
@@ -551,7 +551,7 @@ def chart_experiment_grid(path_origin_absolute, path_destination, new_label_name
 
 
 # MARK: Chart Distribution
-def chart_window_valid_distribution(path_dataset,path_destination):
+def chart_window_valid_distribution(data_series,path_destination):
 	"""
 		Description:
 			
@@ -561,42 +561,52 @@ def chart_window_valid_distribution(path_dataset,path_destination):
 	"""
 	if not os.path.exists(path_destination): os.makedirs(path_destination)
 
-	df = pd.read_feather(path_dataset)
-
-	np_array = df["f1_score"]
-	np_array = np.array(np_array, dtype=float)
+	#df = pd.read_feather(path_dataset)
+	#f1_series = df["f1_score"]
 
 	pl_viridis = sns.color_palette("viridis", 20)
 	sns.palplot(pl_viridis)
 	pl_flare = sns.color_palette("flare",20)
 	sns.palplot(pl_flare)
 
-	fontsize = 11
+	fontsize = 14
+	alpha = 0.8
+	labelpad =7
+	fontsize_tick_label = fontsize-3
+
 	sns.set_style("darkgrid")
 	#'ax' is shortcut to "axes object"
 	#ax = sns.histplot(np_array, bins = 20, kde=True,color=(0.143343, 0.522773, 0.556295))
-	plt.figure(figsize=(8, 5)) 
-	ax = sns.histplot(np_array, color=pl_viridis[6], alpha=0.5, stat="density")  # Histograma
-	ax = sns.kdeplot(np_array, color=pl_viridis[5], alpha=0.3,linewidth=1.5, clip=(None,99.5)) 
+	
+	#plt.figure(figsize=(8, 5))
+	plt.figure(figsize=(9, 4))
+	ax = sns.histplot(data=data_series, bins = 20, color=pl_viridis[6], alpha=0.5, stat="density")
+	ax = sns.kdeplot(data=data_series, color=pl_viridis[5], alpha=0.3,linewidth=1.5, clip=(None,99.5)) 
 
 	#ax.lines[0].set_color(colors[-1])
-	plt.xlabel("F1-Score", fontsize=fontsize, alpha=0.8,labelpad=7)
-	plt.ylabel("Quantidade de Janelas", fontsize=fontsize,alpha=0.8, labelpad=7)
 
-	#ax.set_xlabel("F1-Score", fontsize=fontsize)
-	#ax.set_ylabel("Quantidade de Janelas", fontsize=fontsize)
+	plt.xlabel("F1-Score", fontsize=fontsize, alpha=alpha,labelpad=labelpad)
+	ax.tick_params(axis='x', labelsize=fontsize_tick_label)
+
+	plt.ylabel("Quantidade de Janelas", fontsize=fontsize,alpha=alpha, labelpad=labelpad)
+	ax.tick_params(axis='y', labelsize=fontsize_tick_label)
+
 	#plt.xlim(70, 100)
-	plt.gca().set_facecolor((0.90,0.93,0.93,0.6)) 
+	#plt.gca().set_facecolor((0.90,0.93,0.93,0.6)) 
 	#plt.gca().set_facecolor((0.90,0.90,0.98,0.5)) 
 
-	plt.savefig(os.path.join(path_destination,"valid_window_result_distribution.png"), dpi=300, format="png", bbox_inches="tight")
-	plt.savefig(os.path.join(path_destination,"valid_window_result_distribution.svg"), format="svg", bbox_inches="tight")
+	#plt.savefig(os.path.join(path_destination,"08_valid_window_f1_distribution.png"), dpi=300, format="png", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination,"08_valid_window_f1_distribution.svg"), format="svg", bbox_inches="tight")
 	
 	plt.close()
 
 
+def custom_formatter(x):
+	return f'{x:.2f}'.replace('.', ',')
+
+
 #MARK: Chart F1 Score Valid Window
-def chart_window_valid_f1score(path_dataset,path_destination):
+def chart_window_valid_f1score(path_dataset,path_destination,single_chart=True):
 	"""
 		Description:
 			
@@ -610,47 +620,96 @@ def chart_window_valid_f1score(path_dataset,path_destination):
 	#df.query("invalid_window == 0 and f1_score > 70", inplace=True)
 	df.query("invalid_window == 0", inplace=True)
 	df.sort_values(by=["experiment","f1_score"],ascending=[True,False],inplace=True)
+	fontsize_label = 14
+	fontsize_tick_label = fontsize_label-3
 
-	path_absolute = os.path.join(path_destination,"valid_window_f1_score.svg")
 	sns.set_style("darkgrid")
+	if single_chart:
+		path_absolute = os.path.join(path_destination,"valid_window_f1_score.svg")
+		g = sns.catplot(
+			data=df
+			,x='f1_score'
+			,y='window'
+			,hue='window'
+			,col='experiment'
+			,kind='bar'
+			,col_wrap=2
+			,height=4
+			,aspect=1.5
+			,palette="viridis"
+			,sharey=False
+			,sharex=True
+		)
 
-	g = sns.catplot(
-		data=df,
-		x='f1_score', y='window',
-		hue='window',
-		col='experiment',
-		kind='bar',
-		col_wrap=2,
-		height=4,
-		aspect=1.5,
-		palette="viridis",
-		sharey=False
-		#sharex=False
-	)
+		g.set_titles("Experimento: {col_name}")
+		g.set_axis_labels("F1-Score", "Janela [MxN]", fontsize=fontsize_label)
+		plt.tight_layout()
 
-	g.set_titles("Experimento: {col_name}")
-	g.set_axis_labels("Janela [MxN]", "F1-Score")
-	plt.tight_layout()
+		for ax in g.axes.flatten():
+			for container in ax.containers:
+				ax.bar_label(container, labels=[custom_formatter(bar.get_width()) for bar in container],
+							label_type='edge', padding=4, fontsize=fontsize_tick_label)
+	
+				ax.tick_params(axis='x', labelsize=fontsize_tick_label, labelbottom=True)  # force labels on
+				ax.tick_params(axis='y', labelsize=fontsize_tick_label, labelbottom=True)  # force labels on
 
-	for ax in g.axes.flatten():
-		for container in ax.containers:
-			# Custom formatting function
-			def custom_formatter(x):
-				return f'{x:.2f}'.replace('.', ',')
+			#ax.tick_params(axis='x', labelsize=10)
+			ax.set_xlim(left=60)
 
-			ax.bar_label(container, labels=[custom_formatter(bar.get_width()) for bar in container],
-						label_type='edge', padding=4, fontsize=9)
+		plt.savefig(path_absolute,dpi='figure')
+	else:
+		experiment_unique = df["experiment"].unique()
+		sns.set_style("darkgrid")
+		alpha = 0.7
+		pl_viridis = sns.color_palette("viridis")
+		filename_chart = ""
+		#plt.figure(figsize=(9, 4))
+		height = 4
 
-		ax.tick_params(axis='x', labelsize=9)
-		ax.set_xlim(left=50)
+		for experiment in experiment_unique:
+			filename_chart =  f"{str(experiment).zfill(2)}_experiment_valid_window_f1_score.svg"
+
+			dataset = df.query("experiment == @experiment").copy()
+			dataset.sort_values(by="f1_score",ascending=False)
+			
+			if len(dataset) > 10: height = 6
+
+			g = sns.catplot(
+				data=dataset
+				,x='f1_score'
+				,y='window'
+				,hue='window'
+				,kind='bar'
+				,height=height
+				,aspect=1.5
+				,palette="viridis"
+			)
+
+			g.set_titles("Experimento: {experiment}")
+			g.set_axis_labels("F1-Score", "Janela [MxN]", fontsize=fontsize_label)
+			#g.figure.subplots_adjust(right=1.43)
+			
+			if len(dataset) < 10: g.figure.set_size_inches(9, 4)
+			
+			plt.tight_layout()
+
+			for ax in g.axes.flatten():
+				for container in ax.containers:
+					ax.bar_label(container, labels=[custom_formatter(bar.get_width()) for bar in container],
+								label_type='edge', padding=4, fontsize=fontsize_tick_label)
+
+				ax.tick_params(axis='x', labelsize=fontsize_tick_label, labelbottom=True)  # force labels on
+				ax.tick_params(axis='y', labelsize=fontsize_tick_label, labelbottom=True)  # force labels on
+				ax.set_xlim(left=60)
 
 
-	#plt.show()
-	plt.savefig(path_absolute,dpi='figure')
+			#plt.show()
+			plt.subplots_adjust(wspace=0.3)
+			plt.savefig(os.path.join(path_destination,filename_chart),dpi='figure')
 
 
-# MARK: Chart Outlier
-def chart_outlier(path_absolute_dataframe,path_destination):
+# MARK: Chart Outlier Grid
+def chart_outlier_grid(path_absolute_dataframe,path_destination):
 	"""
 		Description:
 			
@@ -665,6 +724,9 @@ def chart_outlier(path_absolute_dataframe,path_destination):
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0", inplace=True)
 	experiment_valid_window_ammount = len(df["experiment"].unique())
+	fontsize_label = 14
+	fontsize_tick_label = fontsize_label-3
+	alpha=0.8
 
 	sns.set_style("darkgrid")
 	# Sample category colors
@@ -691,16 +753,19 @@ def chart_outlier(path_absolute_dataframe,path_destination):
 		boxplot = sns.boxplot(x="experiment", y="f1_score", data=subset, ax=ax, patch_artist=True)
 		for patch in boxplot.patches:
 			patch.set_facecolor(category_colors[experiment])
-			patch.set_alpha(0.5)  # Ensure partial opacity for better contrast
+			patch.set_alpha(alpha-0.3)  # Ensure partial opacity for better contrast
 			
 		ax.set_xticklabels([])
-		#ax.set_xticklabels(["Média F1-Score"], fontsize=8)
-		
-		ax.set_xlabel(f"Experimento: {experiment}", fontsize=10, alpha=0.8)
-		ax.set_ylabel("Média F1-Score", fontsize=10, alpha=0.8, labelpad=9)
+			
+		ax.set_xlabel(f"Experimento: {experiment}", fontsize=fontsize_label, alpha=alpha)
+		ax.tick_params(axis='x', labelsize=fontsize_tick_label)
+
+		ax.set_ylabel("Média F1-Score", fontsize=fontsize_label, alpha=alpha, labelpad=9)
+		ax.tick_params(axis='y', labelsize=fontsize_tick_label)
+	
 
 		# Ensure consistent facecolor across resized section
-		ax.set_facecolor((0.90, 0.93, 0.93, 0.6))
+		#ax.set_facecolor((0.90, 0.93, 0.93, 0.6))
 		
 		ax_position+=1
 		
@@ -708,7 +773,43 @@ def chart_outlier(path_absolute_dataframe,path_destination):
 	fig.tight_layout()
 	fig.subplots_adjust(top=0.9, hspace=0.4)  # Top margin & vertical spacing
 
-	plt.savefig(os.path.join(path_destination, "outliers_analyses.png"), dpi=300, format="png", bbox_inches="tight")
-	plt.savefig(os.path.join(path_destination, "outliers_analyses.svg"), format="svg", bbox_inches="tight")
+	#plt.savefig(os.path.join(path_destination, "outliers_analyses.png"), dpi=300, format="png", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination, "09_outliers_analyses_grid.svg"), format="svg", bbox_inches="tight")
+
+	plt.close()
+
+
+# MARK: Chart Outlier
+def chart_outlier(data_series,path_destination):
+	"""
+		Description:
+			
+		Arguments:
+			
+	"""
+
+	if not os.path.exists(path_destination): os.makedirs(path_destination)
+
+	fontsize_label = 16
+	fontsize_tick_label = fontsize_label-3
+	alpha=0.8
+	sns.set_style("darkgrid")
+
+	fig = plt.figure(figsize=(9, 4))
+	ax = sns.boxplot(x=data_series, patch_artist=True)
+
+	for patch in ax.patches:
+		patch.set_alpha(alpha-0.3)  # Ensure partial opacity for better contrast
+
+	ax.set_xlabel("Série médias de F1-Score", fontsize=fontsize_label, alpha=alpha, labelpad=9)
+	ax.tick_params(axis='x', labelsize=fontsize_tick_label)
+	ax.set_ylabel(f"Dados Unificados", fontsize=fontsize_label, alpha=alpha)
+	ax.tick_params(axis='y', labelsize=fontsize_tick_label)
+
+
+	#fig.tight_layout()
+
+	#plt.savefig(os.path.join(path_destination, "outliers_analyses.png"), dpi=300, format="png", bbox_inches="tight")
+	plt.savefig(os.path.join(path_destination, "10_outliers_analyses.svg"), format="svg", bbox_inches="tight")
 
 	plt.close()

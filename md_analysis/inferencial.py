@@ -11,6 +11,10 @@ from statstests.tests import shapiro_francia
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from scipy.stats import boxcox 
+
+
+# MARK: Hyphoteses Test Message
 def test_message(p_value,alpha,h0_greater):
 	"""
 		Description:
@@ -35,11 +39,13 @@ def test_message(p_value,alpha,h0_greater):
 			
 	return message
 
+
 # MARK: Norm. Dist. Test
-def test_normal_distribution(path_dataset,path_destination,alpha=0.05):
-	df = pd.read_feather(path_dataset)
+def test_normal_distribution(data_series,path_absolute_destination,alpha=0.05):
+	#df = pd.read_feather(path_dataset)
 	result = {}
-	np_array = df["f1_score"]
+	#np_array = df["f1_score"]
+	np_array = data_series
 	np_array = np.array(np_array, dtype=float)
 	
 	statistic, p_value = shapiro(np_array)
@@ -50,70 +56,11 @@ def test_normal_distribution(path_dataset,path_destination,alpha=0.05):
 	sf["message"] = message
 	result["Shapiro-Francia"] = sf
 	
-	with open(os.path.join(path_destination,"test_normal_distribution.json"), "w", encoding="utf-8") as file_result:
+	with open(path_absolute_destination, "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
 
 
-def chart_outlier(path_absolute_dataframe,path_destination):
-	"""
-		Description:
-			
-		Arguments:
-			
-	"""
-
-	pl_viridis = sns.color_palette("viridis", 20)
-	pl_flare = sns.color_palette("flare",20)
-	df = pd.read_feather(path_absolute_dataframe)
-	df.query("invalid_window == 0", inplace=True)
-
-	sns.set_style("darkgrid")
-	# Sample category colors
-	category_colors = {
-		1: pl_flare[5],
-		2: pl_flare[9],
-		3: pl_viridis[8],
-		4: pl_viridis[11],
-	}
-
-	# Determine number of rows (last row will have a single, full-width plot)
-	#n_rows = (len(unique_experiments) - 1) // 2 + 1
-
-	fig, axes = plt.subplots(1, 3, figsize=(9, 4), sharex=False)
-	axes = axes.flatten()
-	unique_experiment = df["experiment"].unique()
-	
-	# Iterate through experiments and plot
-	ax_position = 0
-	for experiment in unique_experiment:
-		subset = df[df["experiment"] == experiment]	
-		ax = axes[ax_position]
-
-		boxplot = sns.boxplot(x="experiment", y="f1_score", data=subset, ax=ax, patch_artist=True)
-		for patch in boxplot.patches:
-			patch.set_facecolor(category_colors[experiment])
-			patch.set_alpha(0.5)  # Ensure partial opacity for better contrast
-			
-		ax.set_xticklabels([])
-		#ax.set_xticklabels(["Média F1-Score"], fontsize=8)
-		
-		ax.set_xlabel(f"Experimento: {experiment}", fontsize=10, alpha=0.8)
-		ax.set_ylabel("Média F1-Score", fontsize=10, alpha=0.8, labelpad=9)
-
-		# Ensure consistent facecolor across resized section
-		ax.set_facecolor((0.90, 0.93, 0.93, 0.6))
-		
-		ax_position+=1
-		
-	# Adjust layout and spacing
-	fig.tight_layout()
-	fig.subplots_adjust(top=0.9, hspace=0.4)  # Top margin & vertical spacing
-
-	plt.savefig(os.path.join(path_destination, "outliers_analyses.png"), dpi=300, format="png", bbox_inches="tight")
-	plt.savefig(os.path.join(path_destination, "outliers_analyses.svg"), format="svg", bbox_inches="tight")
-
-	plt.close()
-
+# MARK: IQR Test
 def test_iqr_outlier(path_absolute_dataframe,path_destination):
 	"""
 		Description:
@@ -189,6 +136,7 @@ def test_random_permutation_old(path_absolute_dataframe,n_perm,alpha,path_destin
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
 
 
+# MARK: Random Permutation Test
 def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destination):
 	"""
 		Description:
@@ -236,3 +184,30 @@ def test_random_permutation(path_absolute_dataframe,n_perm,alpha,path_destinatio
 
 	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, ensure_ascii=False, indent=4)
+
+
+# MARK: Box-Cox Transformation
+def boxcox_transformation(path_absolute_dataframe,path_destination):
+	df = pd.read_feather(path_absolute_dataframe)
+	df.query("invalid_window == 0")
+	f1_series = df["f1_score"]
+	
+	normalized_series, lamb = boxcox(f1_series)
+
+	plt.hist(f1_series, bins=8, color="skyblue", edgecolor="black")
+	plt.xlabel("Value")
+	plt.ylabel("Frequency")
+	plt.title("Histogram of Data")
+	
+	plt.savefig(os.path.join(path_destination, "original_data_series.svg"), format="svg", bbox_inches="tight")
+	plt.close()
+
+	plt.hist(normalized_series, bins=8, color="skyblue", edgecolor="black")
+	plt.xlabel("Value")
+	plt.ylabel("Frequency")
+	plt.title("Histogram of Data")
+
+	plt.savefig(os.path.join(path_destination, "normalized_series.svg"), format="svg", bbox_inches="tight")
+	plt.close()
+
+	return(normalized_series,lamb)
