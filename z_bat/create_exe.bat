@@ -20,7 +20,7 @@ CALL "%path_env%\python.exe" -m PyInstaller  ^
     --workpath "%output_folder%" ^
     --distpath "%output_folder%" ^
     --specpath "%output_folder%" ^
-    "%~dp0..\main.py"
+    "%~dp0..\machine_learning.py"
 
 CALL "%path_env%\deactivate"
 TIMEOUT 10
