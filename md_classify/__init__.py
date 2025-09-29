@@ -105,7 +105,7 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 
 				match model:
 					case "DUM": classifier = DummyClassifier(random_state=random_state,strategy="stratified")
-					case "DT": classifier = DecisionTreeClassifier(random_state=random_state,criterion="gini",min_samples_split=min_samples_split,max_depth=max_depth,min_samples_leaf=min_samples_split)
+					case "DT": classifier = DecisionTreeClassifier(random_state=random_state,criterion="gini",min_samples_split=min_samples_split,max_depth=max_depth,min_samples_leaf=min_samples_leaf)
 					case "NB": classifier = GaussianNB(priors=None, var_smoothing=1e-09)
 					case "KNN": classifier = KNeighborsClassifier(n_neighbors=5,weights='uniform', algorithm='auto', leaf_size=30, p=2, metric='minkowski', metric_params=None, n_jobs=None)
 					case "XGB": classifier = xgb.XGBClassifier(random_state=random_state,verbosity=int_verbose,objective="binary:logistic",min_child_weight=min_samples_leaf,max_depth=max_depth,eta=0.1,gamma=5)
@@ -173,8 +173,8 @@ def classify(path_origin,path_destination,list_classifier,random_state,verbose,k
 					rounds+=1
 					train_test_execution+=1
 
-			df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_column_type.items()})
-			df = pd.DataFrame(result,columns=df.columns.tolist())
-			df.to_feather(os.path.join(path_destination,window_filename))
+				df = pd.DataFrame({col: pd.Series(dtype=dtype) for col, dtype in dict_column_type.items()})
+				df = pd.DataFrame(result,columns=df.columns.tolist())
+				df.to_feather(os.path.join(path_destination,f"{Path(window_filename).stem}_{model}.feather"))
 	except Exception as error:
 		ut.log_file(filename="log_file",header_message="classify: plant stress")

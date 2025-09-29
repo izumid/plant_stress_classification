@@ -6,8 +6,9 @@ ECHO Enviroment path: %path_env%
 
 CALL "%path_env%\activate.bat"
 "%path_env%\python.exe" -m pip list
-"%path_env%\python.exe" -m pip install -U pip
-"%path_env%\python.exe" -m pip install -r "%~dp0../requirements.txt"
+rem "%path_env%\python.exe" -m pip install -U pip
+"%path_env%\python.exe" -m pip install --upgrade pandas
+rem "%path_env%\python.exe" -m pip install -r "%~dp0../requirements.txt"
 "%path_env%\python.exe" -m pip list
 CALL "%path_env%\deactivate.bat"
 

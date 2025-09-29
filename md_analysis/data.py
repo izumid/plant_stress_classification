@@ -217,6 +217,47 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 	df.to_feather(path_absolute_destination)
 
 
+def group_data_model(path_absolute_origin,path_absolute_destination,group_by,type_aggregation,sort_ascending):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+	
+	type_aggregation = {
+		"accuracy_train": "mean"
+		,"accuracy_test": "mean"
+		,"presicion": "mean"
+		,"recall": "mean"
+		,"f1_score": "mean"
+	}	
+	# 	,"train_acc_ten_difference": "sum"
+	# 	,"train_test_hundred": "sum"
+	# 	,"f1_hundred": "sum"
+	# 	,"below_dummy": "sum"
+	# 	,"invalid_window": "sum"
+	# }
+
+
+	df = pd.read_feather(path_absolute_origin)
+	df.drop(columns=["train_acc_ten_difference","train_test_hundred","f1_hundred","below_dummy","invalid_window"], inplace=True)
+	print(df.head())
+	
+	group_by = ["experiment","model","window","samples_summarized"]
+	df = df.groupby(group_by,as_index=False).agg(type_aggregation)
+	df.reset_index(drop=True, inplace=True)
+
+	#df.sort_values(by=group_by,ascending=sort_ascending,inplace=True)
+	#df.rename(columns={"window": "window_size"}, inplace=True)
+	#window = df["window_size"].astype(str)+"x"+df["samples_summarized"].astype(str)
+	#df.insert(1,"window",window)
+	
+	df.to_feather(path_absolute_destination)
+
+
+
 def melt_data(path_origin_absolute,label_order,path_destination_absolute,column_select):
 	"""
 		Description:

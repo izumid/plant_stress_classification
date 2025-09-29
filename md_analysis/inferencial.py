@@ -137,14 +137,13 @@ def test_random_permutation_old(path_absolute_dataframe,n_perm,alpha,path_destin
 
 
 # MARK: Random Permutation Test
-def test_random_permutation(path_absolute_dataframe,permutation_number,alpha,path_destination):
+def test_random_permutation(path_absolute_dataframe,permutation_number,alpha,path_destination,random_state):
 	"""
 		Description:
 			
 		Arguments:
 			
 	"""
-
 	df = pd.read_feather(path_absolute_dataframe)
 	df.query("invalid_window == 0")
 	df.sort_values(by="f1_score", inplace=True)
@@ -152,10 +151,12 @@ def test_random_permutation(path_absolute_dataframe,permutation_number,alpha,pat
 	window_name = np.array(df["window"], dtype=str)
 	f1_score = np.array(df["f1_score"], dtype=float) #Already sorted by the previous dataframe sort
 	
+	np.random.seed(random_state)
 	permutated = np.array([np.random.permutation(f1_score) for _ in range(permutation_number)])
 	expected_value = np.mean(permutated, axis=0)
 	p_value = []
 	result={}
+	data = []
 
 	for score in f1_score:
 		p = np.sum(permutated >= score) / permutated.size
@@ -172,6 +173,12 @@ def test_random_permutation(path_absolute_dataframe,permutation_number,alpha,pat
 				"difference": float(difference),
 				"p_value": float(p_val)
 			}
+			
+			data.append([i, experiment[i], window_name[i], f1_score[i], expected_value[i],difference,p_val])
+
+	df = pd.DataFrame(data, columns=["rank_position","experiment","window","f1_score","expected_value","difference","p_value"])
+	df.sort_values(by="rank_position", ascending=False,inplace=True)
+	df.to_feather(os.path.join(path_destination,"test_random_permutation.feather"))
 
 	with open(os.path.join(path_destination,"test_random_permutation.json"), "w", encoding="utf-8") as file_result:
 		json.dump(result, file_result, indent=4)
