@@ -58,7 +58,26 @@ def dataset_info(path_origin):
 				x  = df.applied_stimulus
 				print("dataset length: ",len(x), "\r\n"*5)
 			except: continue
+
+
+def filter_data(path_experiment,column_name,remove_label,destination_folder):
 	
+	try:
+		for location in path_experiment:
+			folder_experiment = os.path.join(os.getcwd(),location)
+			
+			path_absolute_destination = location.replace("03_experiment_result", destination_folder)
+			if not os.path.exists(path_absolute_destination): os.makedirs(path_absolute_destination)
+			
+			for file_window_result in os.listdir(folder_experiment):
+				path_absolute = os.path.join(folder_experiment,file_window_result)
+				dataframe = pd.read_feather(path_absolute)
+				df_filtered = dataframe.query(f"{column_name} != @remove_label").copy()
+
+				df_filtered.to_feather(os.path.join(path_absolute_destination,file_window_result))
+	except Exception as error:
+		ut.log_file(filename="log_file",header_message=f"[Filter Data] remove from column [{column_name}] label: {remove_label}")
+
 
 # MARK: Data Gather
 def read_add_column(path_absolute):
@@ -194,7 +213,34 @@ def premisse_boolean(path_absolute_origin,path_absolute_destination):
 
 
 # MARK: Data Group
-def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_by,type_aggregation,sort_ascending):
+def group_model(path_absolute_origin,group_by,type_aggregation,sort_ascending,path_absolute_destination):
+	"""
+		Description:
+			
+		Arguments:
+
+
+	"""
+
+	try:
+		df = pd.read_feather(path_absolute_origin)
+		df["model"] = df["model"].astype(str)
+		
+		df = df.groupby(by=group_by,as_index=False).agg(type_aggregation)
+		df.reset_index(drop=True, inplace=True)
+		df.sort_values(by=group_by,ascending=sort_ascending,inplace=True)
+		df.rename(columns={"window": "window_size"}, inplace=True)
+
+		window = df["window_size"].astype(str)+"x"+df["samples_summarized"].astype(str)
+		df.insert(1,"window",window)
+
+		df.to_feather(path_absolute_destination)
+	except Exception as error:
+		print(error)
+		ut.log_file(filename="log_file",header_message="[Group Data]")
+
+
+def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_by,type_aggregation):
 	"""
 		Description:
 			
@@ -205,16 +251,16 @@ def group_data(path_absolute_origin,path_absolute_destination,column_drop,group_
 	
 	df = pd.read_feather(path_absolute_origin)
 	df.query("model != 'DUM'", inplace=True)
+
 	df.drop(columns=column_drop,inplace=True)
+
 	df = df.groupby(group_by,as_index=False).agg(type_aggregation)
 	df.reset_index(drop=True, inplace=True)
-	df.sort_values(by=group_by,ascending=sort_ascending,inplace=True)
-	df.rename(columns={"window": "window_size"}, inplace=True)
-
-	window = df["window_size"].astype(str)+"x"+df["samples_summarized"].astype(str)
-	df.insert(1,"window",window)
+	#df.sort_values(by=["experiment","window_size"],ascending=[True,False],inplace=True)
 	
 	df.to_feather(path_absolute_destination)
+
+
 
 
 def group_data_model(path_absolute_origin,path_absolute_destination,group_by,type_aggregation,sort_ascending):
@@ -266,23 +312,27 @@ def melt_data(path_origin_absolute,label_order,path_destination_absolute,column_
 
 
 	"""
-	df = pd.read_feather(path_origin_absolute)
-	df = df[column_select]
-	df["total"] = 1
+	try:
+		df = pd.read_feather(path_origin_absolute)
+		df = df[column_select]
+		df["total"] = 1
 
-	for col in (df.columns.to_list())[1:]:
-		df[col] = df[col].apply(lambda x: 1 if x != 0 else x)
+		for col in (df.columns.to_list())[1:]:
+			df[col] = df[col].apply(lambda x: 1 if x != 0 else x)
 
-	df = df.groupby("experiment",as_index=True).sum()
-	df.reset_index(inplace=True)
-	
-	df = df.melt(id_vars=["experiment"], var_name='premisses', value_name='quantity')
+		df = df.groupby("experiment",as_index=True).sum()
+		df.reset_index(inplace=True)
+		
+		df = df.melt(id_vars=["experiment"], var_name='premisses', value_name='quantity')
 
-	df["order"] = df["premisses"].map(label_order)
+		df["order"] = df["premisses"].map(label_order)
 
-	df.rename(columns={"level_1": "premisses", 0: "quantity"},inplace=True)
-	df.sort_values(["experiment", "order"], inplace=True)
-	df.to_feather(path_destination_absolute)
+		df.rename(columns={"level_1": "premisses", 0: "quantity"},inplace=True)
+		df.sort_values(["experiment", "order"], inplace=True)
+		df.to_feather(path_destination_absolute)
+	except Exception as error:
+		print(error)
+		ut.log_file(filename="log_file",header_message="[Melt dataset]")
 
 
 

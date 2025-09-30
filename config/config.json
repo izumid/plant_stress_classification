@@ -8,7 +8,7 @@
 	,"y_event_value": 1
 	,"test": false
 	,"pre_processing_data": false
-	,"unique_value": false
+	,"unique_value": true
 	,"balanced_sample": true
 	,"classify": true
 	,"skip_file_exists": true
